@@ -66,6 +66,7 @@ async def upsert_user(session: AsyncSession, telegram_user: Any, started: bool =
             last_name=telegram_user.last_name,
             username=telegram_user.username,
             language_code=telegram_user.language_code,
+            preferred_language="en",
             is_bot=telegram_user.is_bot,
             first_seen_at=now,
             last_seen_at=now,
@@ -84,6 +85,24 @@ async def upsert_user(session: AsyncSession, telegram_user: Any, started: bool =
     await session.commit()
     await session.refresh(user)
     return user
+
+
+async def get_user_by_telegram_id(session: AsyncSession, telegram_user_id: int) -> User | None:
+    return await session.scalar(select(User).where(User.telegram_user_id == telegram_user_id))
+
+
+async def get_user_language(session: AsyncSession, telegram_user_id: int) -> str:
+    user = await get_user_by_telegram_id(session, telegram_user_id)
+    return user.preferred_language if user and user.preferred_language else "en"
+
+
+async def set_user_language(session: AsyncSession, telegram_user_id: int, language: str) -> None:
+    await session.execute(
+        update(User)
+        .where(User.telegram_user_id == telegram_user_id)
+        .values(preferred_language=language, last_seen_at=datetime.now(timezone.utc))
+    )
+    await session.commit()
 
 
 async def increment_conversion(session: AsyncSession, telegram_user_id: int) -> None:

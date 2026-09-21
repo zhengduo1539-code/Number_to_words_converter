@@ -19,6 +19,7 @@ class User(Base):
     last_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     username: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
     language_code: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    preferred_language: Mapped[str] = mapped_column(String(16), default="en", server_default="en")
     is_bot: Mapped[bool] = mapped_column(Boolean, default=False)
     first_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)

@@ -40,6 +40,9 @@ async def test_defaults_reset_and_user_registration(tmp_path):
         second = await upsert_user(session, user, started=False)
         assert first.id == second.id
         assert second.start_count == 1
+        from app.db.repository import get_user_language, set_user_language
+        await set_user_language(session, user.id, "my")
+        assert await get_user_language(session, user.id) == "my"
         await reset_welcome_buttons(session)
         assert (await list_welcome_buttons(session))[0].button_type == "share"
         from app.db.repository import get_setting

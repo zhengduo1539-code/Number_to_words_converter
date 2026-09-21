@@ -4,6 +4,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from pydantic import ValidationError
 
 from app.db.models import AdminButton, WelcomeButton
+from app.services.i18n import normalize_language
 
 
 def compatible_button(
@@ -37,11 +38,26 @@ def button_text(label: str, fallback_emoji: str | None) -> str:
     return label
 
 
-def welcome_markup(buttons: list[WelcomeButton], bot_username: str | None) -> InlineKeyboardMarkup:
+def welcome_markup(
+    buttons: list[WelcomeButton], bot_username: str | None, language: str = "en"
+) -> InlineKeyboardMarkup:
     rows: list[list[InlineKeyboardButton]] = []
+    share_labels = {
+        "en": "🔗 Share Bot",
+        "zh": "🔗 分享机器人",
+        "my": "🔗 Bot ကိုမျှဝေမည်",
+        "am": "🔗 ቦቱን አጋራ",
+        "om": "🔗 Botii qoodi",
+        "es": "🔗 Compartir bot",
+        "fr": "🔗 Partager le bot",
+        "ru": "🔗 Поделиться ботом",
+    }
+    language = normalize_language(language)
     for item in buttons:
         label = button_text(item.label, item.fallback_emoji)
         if item.button_type == "share":
+            if item.label == "🔗 Share Bot":
+                label = share_labels[language]
             username = bot_username or "this_bot"
             url = f"https://t.me/share/url?url=https://t.me/{username}&text=Try%20Numbers%20to%20Words%20Converter"
             rows.append([compatible_button(label, url=url, style=item.style, icon_custom_emoji_id=item.icon_custom_emoji_id)])

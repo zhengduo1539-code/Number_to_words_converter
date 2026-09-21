@@ -11,6 +11,7 @@ It includes PostgreSQL-ready persistence, an admin panel, customizable welcome c
 ## Features
 
 - Integers, comma-separated numbers, negatives, decimals, and arbitrary-precision values.
+- `/lang` language selector with American English as the default and Simplified Chinese, Myanmar, Amharic, Afaan Oromo, Spanish, French, and Russian output.
 - `/start` welcome flow with a dynamically generated Share Bot URL.
 - Admin-only `/admin` and `/ctm` commands authorized by numeric Telegram IDs.
 - Database-backed welcome and admin button customization.
@@ -18,6 +19,21 @@ It includes PostgreSQL-ready persistence, an admin panel, customizable welcome c
 - Reset, cancel, preview, pagination, and broadcast confirmation workflows.
 - PostgreSQL in production; SQLite is the default local fallback.
 - `GET /health`, `GET /ready`, and `POST /telegram/webhook`.
+
+## Language selection
+
+The general Telegram command menu contains `/start` and `/lang`. Press `/lang` and choose a green inline button:
+
+- American English (default)
+- Chinese (Simplified)
+- Myanmar
+- Amharic
+- Afaan Oromo
+- Spanish
+- French
+- Russian
+
+The selection is stored per Telegram user in the database and is restored after restarts. The selected language controls the default welcome copy, number conversion output, invalid-input guidance, and the Share Bot button label. An administrator's custom welcome message remains unchanged and is shown as configured.
 
 ## Project structure
 

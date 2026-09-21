@@ -8,7 +8,7 @@ from aiogram.types import BotCommand, BotCommandScopeChat, BotCommandScopeDefaul
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.config import Settings
-from app.handlers import admin, converter, start
+from app.handlers import admin, converter, language, start
 from app.handlers.common import RegisterUserMiddleware
 
 logger = logging.getLogger(__name__)
@@ -33,6 +33,7 @@ def create_dispatcher(session_factory: async_sessionmaker[AsyncSession]) -> Disp
     dispatcher.callback_query.middleware(session_middleware)
     dispatcher.message.middleware(RegisterUserMiddleware())
     dispatcher.include_router(start.router)
+    dispatcher.include_router(language.router)
     dispatcher.include_router(admin.router)
     dispatcher.include_router(converter.router)
     return dispatcher
@@ -40,13 +41,17 @@ def create_dispatcher(session_factory: async_sessionmaker[AsyncSession]) -> Disp
 
 async def configure_commands(bot: Bot, settings: Settings) -> None:
     await bot.set_my_commands(
-        [BotCommand(command="start", description="Start the converter")],
+        [
+            BotCommand(command="start", description="Start the converter"),
+            BotCommand(command="lang", description="Change language"),
+        ],
         scope=BotCommandScopeDefault(),
     )
     for admin_id in settings.admin_ids:
         await bot.set_my_commands(
             [
                 BotCommand(command="start", description="Start the converter"),
+                BotCommand(command="lang", description="Change language"),
                 BotCommand(command="admin", description="Open admin panel"),
                 BotCommand(command="ctm", description="Customize the bot"),
             ],
