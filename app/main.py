@@ -5,6 +5,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.responses import Response
 
 from app.bot.setup import configure_commands, create_bot, create_dispatcher
 from app.config import get_settings
@@ -62,10 +63,22 @@ else:
     async def health() -> dict[str, str]:
         return {"status": "ok"}
 
+    @app.head("/health")
+    async def health_head() -> Response:
+        return Response(status_code=200)
+
     @app.get("/healthz")
     async def healthz() -> dict[str, str]:
         return {"status": "ok"}
 
+    @app.head("/healthz")
+    async def healthz_head() -> Response:
+        return Response(status_code=200)
+
     @app.get("/ready")
     async def ready() -> dict[str, str]:
         return {"status": "ready"}
+
+    @app.head("/ready")
+    async def ready_head() -> Response:
+        return Response(status_code=200)
