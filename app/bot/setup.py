@@ -19,9 +19,10 @@ def create_bot(settings: Settings) -> Bot:
     return Bot(token=settings.bot_token)
 
 
-def create_dispatcher(session_factory) -> Dispatcher:
+def create_dispatcher(session_factory, settings: Settings) -> Dispatcher:
     dispatcher = Dispatcher(storage=MemoryStorage())
     dispatcher["session_factory"] = session_factory
+    dispatcher["settings"] = settings
 
     async def session_middleware(handler, event, data):
         async with session_factory() as session:
