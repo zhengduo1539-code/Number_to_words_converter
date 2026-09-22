@@ -23,7 +23,7 @@ mongo_client = create_client(settings)
 database = get_database(mongo_client, settings)
 session_factory = create_session_factory(database)
 bot = create_bot(settings) if settings.bot_token else None
-dispatcher = create_dispatcher(session_factory) if bot else None
+dispatcher = create_dispatcher(session_factory, settings) if bot else None
 
 
 @asynccontextmanager
