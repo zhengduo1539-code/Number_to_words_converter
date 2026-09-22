@@ -8,7 +8,7 @@ from fastapi import FastAPI
 
 from app.bot.setup import configure_commands, create_bot, create_dispatcher
 from app.config import get_settings
-from app.db.database import create_engine, create_session_factory, init_db
+from app.db.database import create_client, create_session_factory, get_database, init_db
 from app.db.repository import initialize_defaults
 from app.web.server import create_web_app
 
@@ -18,15 +18,16 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s %(message)s",
 )
 logger = logging.getLogger(__name__)
-engine = create_engine(settings)
-session_factory = create_session_factory(engine)
+mongo_client = create_client(settings)
+database = get_database(mongo_client, settings)
+session_factory = create_session_factory(database)
 bot = create_bot(settings) if settings.bot_token else None
 dispatcher = create_dispatcher(session_factory) if bot else None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await init_db(engine)
+    await init_db(database)
     async with session_factory() as session:
         await initialize_defaults(session)
     polling_task = None
@@ -48,7 +49,7 @@ async def lifespan(app: FastAPI):
         await asyncio.gather(polling_task, return_exceptions=True)
     if bot:
         await bot.session.close()
-    await engine.dispose()
+    mongo_client.close()
 
 
 if bot and dispatcher:
@@ -59,6 +60,10 @@ else:
 
     @app.get("/health")
     async def health() -> dict[str, str]:
+        return {"status": "ok"}
+
+    @app.get("/healthz")
+    async def healthz() -> dict[str, str]:
         return {"status": "ok"}
 
     @app.get("/ready")
