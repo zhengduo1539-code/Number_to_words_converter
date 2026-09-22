@@ -18,6 +18,10 @@ def create_web_app(settings: Settings, bot, dispatcher) -> FastAPI:
     async def health() -> dict[str, str]:
         return {"status": "ok"}
 
+    @web_app.get("/healthz")
+    async def healthz() -> dict[str, str]:
+        return {"status": "ok"}
+
     @web_app.get("/ready")
     async def ready() -> dict[str, str]:
         return {"status": "ready"}
