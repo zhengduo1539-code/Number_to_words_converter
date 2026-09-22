@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from functools import lru_cache
 from typing import Any
 
@@ -10,7 +11,15 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """Environment-backed application configuration."""
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    # pydantic-settings normally JSON-decodes complex environment values
+    # before validators run. ADMIN_IDS is documented as comma-separated in
+    # .env.example, so keep decoding disabled and parse that value ourselves.
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        enable_decoding=False,
+        extra="ignore",
+    )
 
     bot_token: str = Field(default="", alias="BOT_TOKEN")
     admin_ids: list[int] = Field(default_factory=list, alias="ADMIN_IDS")
@@ -30,7 +39,16 @@ class Settings(BaseSettings):
         if value is None or value == "":
             return []
         if isinstance(value, str):
-            values = value.split(",")
+            raw_value = value.strip()
+            if not raw_value:
+                return []
+            if raw_value.startswith("["):
+                try:
+                    values = json.loads(raw_value)
+                except json.JSONDecodeError:
+                    values = raw_value.split(",")
+            else:
+                values = raw_value.split(",")
         else:
             values = value
         result: list[int] = []
