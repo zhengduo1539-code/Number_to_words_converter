@@ -5,8 +5,6 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import BotCommand, BotCommandScopeChat, BotCommandScopeDefault
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
-
 from app.config import Settings
 from app.handlers import admin, converter, language, start
 from app.handlers.common import RegisterUserMiddleware
@@ -20,7 +18,7 @@ def create_bot(settings: Settings) -> Bot:
     return Bot(token=settings.bot_token)
 
 
-def create_dispatcher(session_factory: async_sessionmaker[AsyncSession]) -> Dispatcher:
+def create_dispatcher(session_factory) -> Dispatcher:
     dispatcher = Dispatcher(storage=MemoryStorage())
     dispatcher["session_factory"] = session_factory
 
