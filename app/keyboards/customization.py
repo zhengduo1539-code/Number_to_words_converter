@@ -40,6 +40,7 @@ def welcome_buttons_markup(buttons: list[WelcomeButton]) -> InlineKeyboardMarkup
 
 def action_type_markup() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
+        [compatible_button("🔗 Share Bot Button", callback_data="ctm:wb_type:share", style="primary")],
         [compatible_button("🔗 URL Button", callback_data="ctm:wb_type:url", style="primary")],
         [compatible_button("⚡ Callback Button", callback_data="ctm:wb_type:callback", style="primary")],
         [compatible_button("✖️ Cancel", callback_data="ctm:cancel", style="danger")],
