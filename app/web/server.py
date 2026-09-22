@@ -4,7 +4,7 @@ import hmac
 import logging
 
 from fastapi import FastAPI, Header, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 
 from app.config import Settings
 
@@ -18,13 +18,25 @@ def create_web_app(settings: Settings, bot, dispatcher) -> FastAPI:
     async def health() -> dict[str, str]:
         return {"status": "ok"}
 
+    @web_app.head("/health")
+    async def health_head() -> Response:
+        return Response(status_code=200)
+
     @web_app.get("/healthz")
     async def healthz() -> dict[str, str]:
         return {"status": "ok"}
 
+    @web_app.head("/healthz")
+    async def healthz_head() -> Response:
+        return Response(status_code=200)
+
     @web_app.get("/ready")
     async def ready() -> dict[str, str]:
         return {"status": "ready"}
+
+    @web_app.head("/ready")
+    async def ready_head() -> Response:
+        return Response(status_code=200)
 
     @web_app.post("/telegram/webhook")
     async def telegram_webhook(request: Request, x_telegram_bot_api_secret_token: str | None = Header(default=None)) -> JSONResponse:
