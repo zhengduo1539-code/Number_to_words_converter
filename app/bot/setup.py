@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 
 from aiogram import Bot, Dispatcher
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import BotCommand, BotCommandScopeChat, BotCommandScopeDefault
 from app.config import Settings
@@ -46,12 +47,22 @@ async def configure_commands(bot: Bot, settings: Settings) -> None:
         scope=BotCommandScopeDefault(),
     )
     for admin_id in settings.admin_ids:
-        await bot.set_my_commands(
-            [
-                BotCommand(command="start", description="Start the converter"),
-                BotCommand(command="lang", description="Change language"),
-                BotCommand(command="admin", description="Open admin panel"),
-                BotCommand(command="ctm", description="Customize the bot"),
-            ],
-            scope=BotCommandScopeChat(chat_id=admin_id),
-        )
+        try:
+            await bot.set_my_commands(
+                [
+                    BotCommand(command="start", description="Start the converter"),
+                    BotCommand(command="lang", description="Change language"),
+                    BotCommand(command="admin", description="Open admin panel"),
+                    BotCommand(command="ctm", description="Customize the bot"),
+                ],
+                scope=BotCommandScopeChat(chat_id=admin_id),
+            )
+        except TelegramBadRequest as error:
+            # A configured admin may not have opened the bot yet, may be a
+            # stale ID, or may belong to a chat Telegram cannot resolve.
+            # Do not prevent polling/webhook startup for one bad chat scope.
+            logger.warning(
+                "Could not set admin commands for Telegram ID %s; skipping: %s",
+                admin_id,
+                error,
+            )
