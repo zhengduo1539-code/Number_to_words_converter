@@ -111,6 +111,29 @@ def text(key: str, locale: str = "en", **values: str) -> str:
     return template.format(**values)
 
 
+def without_default_language_decoration(key: str, value: str) -> str:
+    """Remove the default leading symbol when a custom message supplies one."""
+    symbol = {
+        "language_menu": "🌐",
+        "language_changed": "✅",
+    }.get(key)
+    if symbol:
+        value = value.replace(f"{symbol} ", "", 1)
+    return value
+
+
+def localized_custom_language_text(
+    key: str,
+    language: str,
+    custom_text: str,
+    **values: str,
+) -> str:
+    """Return a localized custom language message without default decoration."""
+    language = normalize_language(language)
+    localized = custom_text if language == "en" else text(key, language, **values)
+    return without_default_language_decoration(key, localized)
+
+
 def localized_default_welcome(language: str, example: str) -> str:
     language = normalize_language(language)
     return text(
