@@ -51,6 +51,7 @@ def welcome_markup(
         "es": "🔗 Compartir bot",
         "fr": "🔗 Partager le bot",
         "ru": "🔗 Поделиться ботом",
+        "ar": "🔗 مشاركة البوت",
     }
     language = normalize_language(language)
     for item in buttons:
