@@ -44,7 +44,14 @@ from app.keyboards.customization import (
     welcome_buttons_markup,
     welcome_message_markup,
 )
-from app.services.emoji_service import deserialize_entities, first_custom_emoji_id, first_visible_fallback, serialize_entities
+from app.services.emoji_service import (
+    deserialize_entities,
+    first_custom_emoji_id,
+    first_visible_fallback,
+    localize_custom_emoji_entities,
+    serialize_entities,
+)
+from app.services.i18n import without_default_welcome_decoration
 from app.states.workflows import AdminButtonStates, BroadcastStates, WelcomeButtonStates, WelcomeMessageStates
 from app.utils.formatting import user_label
 from app.utils.pagination import page_count
@@ -272,7 +279,15 @@ async def save_welcome_message(message: Message, state: FSMContext, session) -> 
     await set_setting(session, "welcome_entities", serialize_entities(message.entities))
     await state.clear()
     await message.answer("Welcome message saved. Preview:", reply_markup=welcome_markup(await list_welcome_buttons(session), (await message.bot.get_me()).username))
-    await message.answer(message.text, entities=message.entities or None)
+    preview_text = without_default_welcome_decoration(message.text)
+    preview_entities = message.entities or []
+    if any(entity.type == "custom_emoji" and entity.custom_emoji_id for entity in preview_entities):
+        preview_text, preview_entities = localize_custom_emoji_entities(
+            message.text,
+            preview_entities,
+            preview_text,
+        )
+    await message.answer(preview_text, entities=preview_entities or None)
 
 
 @router.message(WelcomeButtonStates.waiting_label)
