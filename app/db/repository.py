@@ -164,6 +164,13 @@ async def reset_welcome_message(session: MongoSession) -> None:
     await set_setting(session, "welcome_entities", "[]")
 
 
+async def reset_language_messages(session: MongoSession) -> None:
+    await set_setting(session, "language_menu_text", "")
+    await set_setting(session, "language_menu_entities", "[]")
+    await set_setting(session, "language_changed_text", "")
+    await set_setting(session, "language_changed_entities", "[]")
+
+
 async def stats(session: MongoSession) -> dict[str, int]:
     now = datetime.now(timezone.utc)
     users = session.database.users
