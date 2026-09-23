@@ -233,12 +233,14 @@ async def save_welcome_button_style(callback, session, state, style: str) -> Non
     button = await get_welcome_button(session, data.get("button_id")) if data.get("button_id") else None
     if button is None:
         button = WelcomeButton(label=data["label"], button_type=button_type, sort_order=0)
+    else:
+        button.button_type = button_type
     button.style = style
     button.url = data.get("target") if button_type == "url" else None
     button.callback_action = data.get("target") if button_type == "callback" else None
     button.icon_custom_emoji_id = data.get("icon_id")
     button.fallback_emoji = data.get("fallback_emoji")
-    await session.add(button)
+    session.add(button)
     await session.commit()
     await state.clear()
     await edit_or_answer(callback, "Welcome button saved and previewed below.", welcome_buttons_markup(await list_welcome_buttons(session)))
