@@ -18,7 +18,7 @@ SCALES = (
     "novemdecillion", "vigintillion",
 )
 NUMBER_RE = re.compile(r"^[+-]?(?:(?:\d{1,3}(?:,\d{3})+)|\d+)(?:\.\d+)?$")
-SUPPORTED_LANGUAGE_CODES = frozenset({"en", "zh", "my", "am", "om", "es", "fr", "ru"})
+SUPPORTED_LANGUAGE_CODES = frozenset({"en", "zh", "my", "am", "om", "es", "fr", "ru", "ar"})
 
 
 def _under_thousand(number: int) -> str:
@@ -347,6 +347,86 @@ def _oromo_integer(number: int) -> str:
     return " fi ".join(parts)
 
 
+def _arabic_join(parts: list[str]) -> str:
+    """Join Arabic number groups with the conjunction attached to the next word."""
+    return " و".join(part for part in parts if part)
+
+
+def _arabic_under_hundred(number: int) -> str:
+    ones = (
+        "صفر", "واحد", "اثنان", "ثلاثة", "أربعة",
+        "خمسة", "ستة", "سبعة", "ثمانية", "تسعة",
+    )
+    teens = (
+        "عشرة", "أحد عشر", "اثنا عشر", "ثلاثة عشر", "أربعة عشر",
+        "خمسة عشر", "ستة عشر", "سبعة عشر", "ثمانية عشر", "تسعة عشر",
+    )
+    tens = (
+        "", "", "عشرون", "ثلاثون", "أربعون", "خمسون",
+        "ستون", "سبعون", "ثمانون", "تسعون",
+    )
+    if number < 10:
+        return ones[number]
+    if number < 20:
+        return teens[number - 10]
+    ten, one = divmod(number, 10)
+    return _arabic_join([ones[one], tens[ten]]) if one else tens[ten]
+
+
+def _arabic_under_thousand(number: int) -> str:
+    if number < 100:
+        return _arabic_under_hundred(number)
+    hundreds = (
+        "", "مائة", "مائتان", "ثلاثمائة", "أربعمائة",
+        "خمسمائة", "ستمائة", "سبعمائة", "ثمانمائة", "تسعمائة",
+    )
+    hundred, remainder = divmod(number, 100)
+    prefix = hundreds[hundred]
+    return _arabic_join([prefix, _arabic_under_hundred(remainder)]) if remainder else prefix
+
+
+def _arabic_integer(number: int) -> str:
+    if number == 0:
+        return "صفر"
+    if number < 0:
+        return f"سالب {_arabic_integer(-number)}"
+
+    scales = (
+        ("", "", ""),
+        ("ألف", "ألفان", "آلاف"),
+        ("مليون", "مليونان", "ملايين"),
+        ("مليار", "ملياران", "مليارات"),
+        ("تريليون", "تريليونان", "تريليونات"),
+        ("كوادريليون", "كوادريليونان", "كوادريليونات"),
+    )
+    groups: list[int] = []
+    while number:
+        number, group = divmod(number, 1000)
+        groups.append(group)
+    if len(groups) > len(scales):
+        raise ValueError("Number is too large for Arabic scale names")
+
+    parts: list[str] = []
+    for index in range(len(groups) - 1, -1, -1):
+        group = groups[index]
+        if not group:
+            continue
+        if index == 0:
+            parts.append(_arabic_under_thousand(group))
+            continue
+
+        singular, dual, plural = scales[index]
+        if group == 1:
+            parts.append(singular)
+        elif group == 2:
+            parts.append(dual)
+        elif group < 11:
+            parts.append(f"{_arabic_under_thousand(group)} {plural}")
+        else:
+            parts.append(f"{_arabic_under_thousand(group)} {singular}ًا")
+    return _arabic_join(parts)
+
+
 def _integer_in_language(number: int, language: str) -> str:
     if language == "en":
         return integer_to_words(number)
@@ -364,6 +444,8 @@ def _integer_in_language(number: int, language: str) -> str:
         return _french_integer(number)
     if language == "ru":
         return _russian_integer(number)
+    if language == "ar":
+        return _arabic_integer(number)
     return integer_to_words(number)
 
 
@@ -422,6 +504,7 @@ def _decimal_digits(fractional: str, language: str) -> str:
         "es": ("cero", "uno", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve"),
         "fr": ("zéro", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf"),
         "ru": ("ноль", "один", "два", "три", "четыре", "пять", "шесть", "семь", "восемь", "девять"),
+        "ar": ("صفر", "واحد", "اثنان", "ثلاثة", "أربعة", "خمسة", "ستة", "سبعة", "ثمانية", "تسعة"),
     }
     return " ".join(digit_names.get(language, ONES)[int(digit)] for digit in fractional)
 
@@ -434,8 +517,8 @@ def number_to_words(value: str, language: str = "en") -> str:
         return result if language in {"zh", "my", "am", "om", "es", "fr", "ru"} else result
     negative = integer < 0
     magnitude = _integer_in_language(abs(integer), language)
-    prefixes = {"en": "Negative", "zh": "负", "my": "အနုတ်", "am": "አሉታዊ", "om": "negatiivii", "es": "menos", "fr": "moins", "ru": "минус"}
-    separators = {"en": "point", "zh": "点", "my": "ဒသမ", "am": "ነጥብ", "om": "tuqaa", "es": "coma", "fr": "virgule", "ru": "целых"}
+    prefixes = {"en": "Negative", "zh": "负", "my": "အနုတ်", "am": "አሉታዊ", "om": "negatiivii", "es": "menos", "fr": "moins", "ru": "минус", "ar": "سالب"}
+    separators = {"en": "point", "zh": "点", "my": "ဒသမ", "am": "ነጥብ", "om": "tuqaa", "es": "coma", "fr": "virgule", "ru": "целых", "ar": "فاصلة"}
     prefix = f"{prefixes[language]} " if negative else ""
     return f"{prefix}{magnitude} {separators[language]} {_decimal_digits(fractional, language)}"
 
