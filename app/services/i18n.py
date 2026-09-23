@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 
 
 @dataclass(frozen=True)
@@ -117,4 +118,22 @@ def localized_default_welcome(language: str, example: str) -> str:
         language,
         language=LANGUAGE_BY_CODE[language].label,
         example=example,
+    )
+
+
+def without_default_welcome_decoration(value: str) -> str:
+    """Remove the default greeting emoji and example arrow from custom text."""
+    value = value.replace("👋 ", "", 1)
+    return re.sub(r"\s*→\s*", " ", value, count=1)
+
+
+def localized_custom_welcome(language: str, example: str) -> str:
+    """Localize a customized welcome without default decorative symbols.
+
+    A customized message supplies its own animated emoji. The default
+    greeting emoji and example arrow are therefore omitted until the admin
+    resets the welcome message.
+    """
+    return without_default_welcome_decoration(
+        localized_default_welcome(language, example)
     )
