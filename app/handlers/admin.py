@@ -200,6 +200,8 @@ async def customization_callbacks(callback: CallbackQuery, settings: Settings, s
         else:
             await state.set_state(WelcomeButtonStates.waiting_target)
             await edit_or_answer(callback, "Send the URL or callback action now.", cancel_markup())
+    elif action == "wb" and len(parts) >= 4 and parts[2] == "style":
+        await save_welcome_button_style(callback, session, state, parts[3])
     elif action == "wb_style":
         await save_welcome_button_style(callback, session, state, parts[2])
     elif action == "ab_edit":
@@ -211,6 +213,8 @@ async def customization_callbacks(callback: CallbackQuery, settings: Settings, s
         await state.update_data(admin_action=item.action)
         await state.set_state(AdminButtonStates.waiting_label)
         await edit_or_answer(callback, f"Send the new label for “{item.label}”.")
+    elif action == "ab" and len(parts) >= 4 and parts[2] == "style":
+        await save_admin_button_style(callback, session, state, parts[3])
     elif action == "ab_style":
         await save_admin_button_style(callback, session, state, parts[2])
     elif action == "ab_reset":
