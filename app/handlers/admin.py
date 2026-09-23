@@ -188,9 +188,18 @@ async def customization_callbacks(callback: CallbackQuery, settings: Settings, s
         await reset_welcome_buttons(session)
         await edit_or_answer(callback, "Welcome buttons reset to defaults.", welcome_buttons_markup(await list_welcome_buttons(session)))
     elif action == "wb_type":
-        await state.update_data(button_type=parts[2])
-        await state.set_state(WelcomeButtonStates.waiting_target)
-        await edit_or_answer(callback, "Send the URL or callback action now.", cancel_markup())
+        button_type = parts[2]
+        await state.update_data(button_type=button_type)
+        if button_type == "share":
+            await state.set_state(WelcomeButtonStates.waiting_icon)
+            await edit_or_answer(
+                callback,
+                "Optionally send one custom emoji now. The ID is detected automatically. Or send /skip.",
+                cancel_markup(),
+            )
+        else:
+            await state.set_state(WelcomeButtonStates.waiting_target)
+            await edit_or_answer(callback, "Send the URL or callback action now.", cancel_markup())
     elif action == "wb_style":
         await save_welcome_button_style(callback, session, state, parts[2])
     elif action == "ab_edit":
@@ -229,7 +238,7 @@ async def save_welcome_button_style(callback, session, state, style: str) -> Non
     button.callback_action = data.get("target") if button_type == "callback" else None
     button.icon_custom_emoji_id = data.get("icon_id")
     button.fallback_emoji = data.get("fallback_emoji")
-    session.add(button)
+    await session.add(button)
     await session.commit()
     await state.clear()
     await edit_or_answer(callback, "Welcome button saved and previewed below.", welcome_buttons_markup(await list_welcome_buttons(session)))
