@@ -124,13 +124,13 @@ def without_default_language_decoration(key: str, value: str) -> str:
 
 def localized_custom_language_text(
     key: str,
-    language: str,
+    locale: str,
     custom_text: str,
     **values: str,
 ) -> str:
     """Return a localized custom language message without default decoration."""
-    language = normalize_language(language)
-    localized = custom_text if language == "en" else text(key, language, **values)
+    locale = normalize_language(locale)
+    localized = custom_text if locale == "en" else text(key, locale, **values)
     return without_default_language_decoration(key, localized)
 
 
