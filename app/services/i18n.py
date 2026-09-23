@@ -20,7 +20,7 @@ LANGUAGES: tuple[Language, ...] = (
     Language("es", "Spanish", "🇪🇸 Spanish"),
     Language("fr", "French", "🇫🇷 French"),
     Language("ru", "Russian", "🇷🇺 Russian"),
-    Language("ar", "Arabic", "🇸🇦 العربية"),
+    Language("ar", "Arabic", "🇸🇦 Arabic"),
 )
 LANGUAGE_BY_CODE = {item.code: item for item in LANGUAGES}
 
