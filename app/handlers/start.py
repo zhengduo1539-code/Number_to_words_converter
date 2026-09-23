@@ -25,7 +25,11 @@ async def start_handler(message: Message, session, bot) -> None:
 
 
 async def send_welcome(message: Message, session, bot, language: str = "en") -> None:
-    text = await get_setting(session, "welcome_text")
+    # The setting may be missing on an existing database created before
+    # defaults were initialized. Never send an empty Telegram message.
+    text = await get_setting(session, "welcome_text", DEFAULT_WELCOME)
+    if not text.strip():
+        text = DEFAULT_WELCOME
     if text == DEFAULT_WELCOME:
         text = localized_default_welcome(language, number_to_words("10482", language))
         entities = []
