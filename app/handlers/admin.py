@@ -26,6 +26,7 @@ from app.db.repository import (
     list_welcome_buttons,
     mark_blocked,
     reset_admin_buttons,
+    reset_language_messages,
     reset_welcome_buttons,
     reset_welcome_message,
     set_setting,
@@ -39,6 +40,7 @@ from app.keyboards.customization import (
     admin_buttons_markup,
     cancel_markup,
     customization_markup,
+    language_messages_markup,
     reset_all_markup,
     style_markup,
     welcome_buttons_markup,
@@ -51,8 +53,17 @@ from app.services.emoji_service import (
     localize_custom_emoji_entities,
     serialize_entities,
 )
-from app.services.i18n import without_default_welcome_decoration
-from app.states.workflows import AdminButtonStates, BroadcastStates, WelcomeButtonStates, WelcomeMessageStates
+from app.services.i18n import (
+    without_default_language_decoration,
+    without_default_welcome_decoration,
+)
+from app.states.workflows import (
+    AdminButtonStates,
+    BroadcastStates,
+    LanguageMessageStates,
+    WelcomeButtonStates,
+    WelcomeMessageStates,
+)
 from app.utils.formatting import user_label
 from app.utils.pagination import page_count
 from app.utils.security import is_admin, require_admin_callback
@@ -169,6 +180,36 @@ async def customization_callbacks(callback: CallbackQuery, settings: Settings, s
     elif action == "welcome_reset":
         await reset_welcome_message(session)
         await edit_or_answer(callback, "Welcome message reset to default.", welcome_message_markup())
+    elif action == "language_messages":
+        menu_status = "Customized" if await get_setting(session, "language_menu_text") else "Default"
+        changed_status = "Customized" if await get_setting(session, "language_changed_text") else "Default"
+        await edit_or_answer(
+            callback,
+            f"🌐 Language Messages\n\nChoose your language: {menu_status}\nLanguage changed: {changed_status}",
+            language_messages_markup(),
+        )
+    elif action == "language_menu_edit":
+        await state.set_state(LanguageMessageStates.waiting_menu)
+        await edit_or_answer(
+            callback,
+            "Send the custom “Choose your language” message. Add as many animated emojis as needed; language text will still be localized.",
+            cancel_markup(),
+        )
+    elif action == "language_menu_reset":
+        await set_setting(session, "language_menu_text", "")
+        await set_setting(session, "language_menu_entities", "[]")
+        await edit_or_answer(callback, "Choose-your-language message reset to default.", language_messages_markup())
+    elif action == "language_changed_edit":
+        await state.set_state(LanguageMessageStates.waiting_changed)
+        await edit_or_answer(
+            callback,
+            "Send the custom “Language changed” message. Add as many animated emojis as needed; language text will still be localized.",
+            cancel_markup(),
+        )
+    elif action == "language_changed_reset":
+        await set_setting(session, "language_changed_text", "")
+        await set_setting(session, "language_changed_entities", "[]")
+        await edit_or_answer(callback, "Language-changed message reset to default.", language_messages_markup())
     elif action == "welcome_buttons":
         await edit_or_answer(callback, "🔘 Welcome Buttons", welcome_buttons_markup(await list_welcome_buttons(session)))
     elif action == "wb_add":
@@ -231,6 +272,7 @@ async def customization_callbacks(callback: CallbackQuery, settings: Settings, s
         await edit_or_answer(callback, "⚠️ Reset all customizations? User data and conversion statistics will remain untouched.", reset_all_markup())
     elif action == "reset_confirm":
         await reset_welcome_message(session)
+        await reset_language_messages(session)
         await reset_welcome_buttons(session)
         await reset_admin_buttons(session)
         await edit_or_answer(callback, "All customizations reset to defaults.", customization_markup())
@@ -288,6 +330,52 @@ async def save_welcome_message(message: Message, state: FSMContext, session) -> 
             preview_text,
         )
     await message.answer(preview_text, entities=preview_entities or None)
+
+
+async def save_language_message(message: Message, state: FSMContext, session, key: str, entity_key: str, label: str) -> None:
+    if not message.text:
+        await message.answer("Please send a text message, or press Cancel.", reply_markup=cancel_markup())
+        return
+    await set_setting(session, key, message.text)
+    await set_setting(session, entity_key, serialize_entities(message.entities))
+    await state.clear()
+    await message.answer(f"{label} saved.", reply_markup=language_messages_markup())
+    preview_text = without_default_language_decoration(
+        "language_menu" if key == "language_menu_text" else "language_changed",
+        message.text,
+    )
+    preview_entities = message.entities or []
+    if any(entity.type == "custom_emoji" and entity.custom_emoji_id for entity in preview_entities):
+        preview_text, preview_entities = localize_custom_emoji_entities(
+            message.text,
+            preview_entities,
+            preview_text,
+        )
+    await message.answer(preview_text, entities=preview_entities or None)
+
+
+@router.message(LanguageMessageStates.waiting_menu)
+async def save_language_menu_message(message: Message, state: FSMContext, session) -> None:
+    await save_language_message(
+        message,
+        state,
+        session,
+        "language_menu_text",
+        "language_menu_entities",
+        "Choose-your-language message",
+    )
+
+
+@router.message(LanguageMessageStates.waiting_changed)
+async def save_language_changed_message(message: Message, state: FSMContext, session) -> None:
+    await save_language_message(
+        message,
+        state,
+        session,
+        "language_changed_text",
+        "language_changed_entities",
+        "Language-changed message",
+    )
 
 
 @router.message(WelcomeButtonStates.waiting_label)
