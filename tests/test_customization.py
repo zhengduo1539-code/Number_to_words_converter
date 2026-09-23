@@ -9,6 +9,7 @@ from app.services.emoji_service import (
     localize_custom_emoji_entities,
     serialize_entities,
 )
+from app.services.i18n import localized_custom_welcome, without_default_welcome_decoration
 
 
 def test_custom_emoji_entities_round_trip():
@@ -48,8 +49,16 @@ def test_localized_welcome_preserves_animated_emoji_entity():
     localized, localized_entities = localize_custom_emoji_entities(
         source,
         entities,
-        "欢迎\n10482 → 一万零四百八十二",
+        localized_custom_welcome("zh", "一万零四百八十二"),
     )
 
-    assert localized == "欢迎\n10482 🎉 → 一万零四百八十二"
+    assert "👋" not in localized
+    assert "→" not in localized
+    assert "🎉" in localized
     assert localized_entities[0].custom_emoji_id == "12345"
+
+
+def test_custom_welcome_removes_default_emoji_and_arrow_until_reset():
+    assert without_default_welcome_decoration("👋 Hello\n10482 → Ten thousand") == (
+        "Hello\n10482 Ten thousand"
+    )
