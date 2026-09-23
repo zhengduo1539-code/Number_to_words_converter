@@ -12,6 +12,7 @@ It includes MongoDB persistence, an admin panel, customizable welcome content an
 
 - Integers, comma-separated numbers, negatives, decimals, and arbitrary-precision values.
 - `/lang` language selector with American English as the default and Simplified Chinese, Myanmar, Amharic, Afaan Oromo, Spanish, French, Russian, and Arabic output.
+- A localized `Request Language` button that sends user language requests to all configured administrators.
 - `/start` welcome flow with a dynamically generated Share Bot URL.
 - Admin-only `/admin` and `/ctm` commands authorized by numeric Telegram IDs.
 - Database-backed welcome and admin button customization.
