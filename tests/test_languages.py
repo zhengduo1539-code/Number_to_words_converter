@@ -26,6 +26,7 @@ def test_supported_language_outputs():
         "es": "diez mil cuatrocientos ochenta y dos",
         "fr": "dix mille quatre cent quatre-vingt-deux",
         "ru": "десять тысяч четыреста восемьдесят два",
+        "ar": "عشرة آلاف وأربعمائة واثنان وثمانون",
     }
     for language, result in expected.items():
         assert number_to_words("10482", language) == result
