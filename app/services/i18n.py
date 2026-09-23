@@ -20,6 +20,7 @@ LANGUAGES: tuple[Language, ...] = (
     Language("es", "Spanish", "🇪🇸 Spanish"),
     Language("fr", "French", "🇫🇷 French"),
     Language("ru", "Russian", "🇷🇺 Russian"),
+    Language("ar", "Arabic", "🇸🇦 العربية"),
 )
 LANGUAGE_BY_CODE = {item.code: item for item in LANGUAGES}
 
@@ -87,6 +88,14 @@ TEXTS: dict[str, dict[str, str]] = {
         "too_large": "Число слишком большое или имеет неподдерживаемый формат.",
         "welcome": "👋 Добро пожаловать в Numbers to Words Converter!\n\nОтправьте любое число, и я запишу его словами на языке: {language}.\n\nПример:\n10482 → {example}\n\nОтправьте число, чтобы начать.",
         "help": "Отправьте число, например 10482, и я запишу его словами.",
+    },
+    "ar": {
+        "language_menu": "🌐 اختر لغتك:",
+        "language_changed": "✅ تم تغيير اللغة إلى {language}.",
+        "invalid_number": "أرسل رقمًا صحيحًا، مثل 10482 أو -125 أو 10,482 أو 10.25.",
+        "too_large": "الرقم كبير جدًا أو تنسيقه غير مدعوم.",
+        "welcome": "👋 مرحبًا بك في محول الأرقام إلى كلمات!\n\nأرسل أي رقم وسأحوله إلى كلمات باللغة {language}.\n\nمثال:\n10482 → {example}\n\nأرسل رقمًا للبدء.",
+        "help": "أرسل رقمًا مثل 10482 وسأحوله إلى كلمات.",
     },
 }
 
