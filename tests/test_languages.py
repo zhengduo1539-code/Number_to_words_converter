@@ -1,5 +1,11 @@
 from app.keyboards.language import language_markup
-from app.services.i18n import LANGUAGES, normalize_language, text
+from app.services.i18n import (
+    LANGUAGES,
+    localized_custom_language_text,
+    normalize_language,
+    text,
+    without_default_language_decoration,
+)
 from app.services.number_converter import number_to_words
 
 
@@ -29,3 +35,10 @@ def test_language_normalization_and_localized_messages():
     assert normalize_language("zh-CN") == "zh"
     assert normalize_language("unknown") == "en"
     assert "10482" in text("invalid_number", "my")
+
+
+def test_custom_language_messages_localize_and_remove_default_symbol():
+    custom = "🌐 🎉 Choose your language:"
+    assert localized_custom_language_text("language_menu", "zh", custom) == "请选择语言："
+    assert localized_custom_language_text("language_menu", "en", custom) == "🎉 Choose your language:"
+    assert without_default_language_decoration("language_changed", "✅ 🎉 Language changed") == "🎉 Language changed"
