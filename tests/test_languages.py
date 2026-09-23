@@ -12,8 +12,23 @@ from app.services.number_converter import number_to_words
 def test_all_language_buttons_use_success_style():
     markup = language_markup()
     buttons = [button for row in markup.inline_keyboard for button in row]
-    assert len(buttons) == len(LANGUAGES)
-    assert {button.style for button in buttons} == {"success"}
+    language_buttons = [button for button in buttons if button.callback_data.startswith("lang:")]
+    request_buttons = [button for button in buttons if button.callback_data == "request_language"]
+    assert len(language_buttons) == len(LANGUAGES)
+    assert {button.style for button in language_buttons} == {"success"}
+    assert len(request_buttons) == 1
+    assert request_buttons[0].style == "primary"
+
+
+def test_request_language_button_is_localized():
+    markup = language_markup("ar")
+    request_button = [
+        button
+        for row in markup.inline_keyboard
+        for button in row
+        if button.callback_data == "request_language"
+    ][0]
+    assert request_button.text == "🌐 طلب لغة"
 
 
 def test_supported_language_outputs():
