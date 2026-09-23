@@ -41,7 +41,18 @@ async def lifespan(app: FastAPI):
                 drop_pending_updates=False,
             )
             logger.info("Telegram webhook configured")
-        elif settings.polling:
+        else:
+            if not settings.polling:
+                logger.warning(
+                    "POLLING is disabled but WEBHOOK_URL is not configured; "
+                    "falling back to polling so Telegram updates are not dropped"
+                )
+            # Polling and a Telegram webhook cannot consume updates at the
+            # same time. A previous deployment may have left a webhook
+            # configured even after switching back to polling, which makes
+            # every command appear unresponsive. Keep pending updates and
+            # explicitly clear that stale webhook before getUpdates starts.
+            await bot.delete_webhook(drop_pending_updates=False)
             polling_task = asyncio.create_task(dispatcher.start_polling(bot))
             logger.info("Telegram polling started")
     yield
