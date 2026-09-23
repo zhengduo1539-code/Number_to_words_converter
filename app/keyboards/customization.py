@@ -9,10 +9,21 @@ from app.keyboards.buttons import compatible_button, button_text
 def customization_markup() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [compatible_button("📝 Welcome Message", callback_data="ctm:welcome", style="primary")],
+        [compatible_button("🌐 Language Messages", callback_data="ctm:language_messages", style="primary")],
         [compatible_button("🔘 Welcome Buttons", callback_data="ctm:welcome_buttons", style="primary")],
         [compatible_button("🛠 Admin Panel Buttons", callback_data="ctm:admin_buttons", style="primary")],
         [compatible_button("♻️ Reset All", callback_data="ctm:reset_all", style="danger")],
         [compatible_button("✖️ Cancel", callback_data="admin:back", style="danger")],
+    ])
+
+
+def language_messages_markup() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [compatible_button("✏️ Edit Choose Language", callback_data="ctm:language_menu_edit", style="primary")],
+        [compatible_button("♻️ Reset Choose Language", callback_data="ctm:language_menu_reset", style="danger")],
+        [compatible_button("✏️ Edit Language Changed", callback_data="ctm:language_changed_edit", style="primary")],
+        [compatible_button("♻️ Reset Language Changed", callback_data="ctm:language_changed_reset", style="danger")],
+        [compatible_button("⬅️ Back", callback_data="ctm:home", style="primary")],
     ])
 
 
