@@ -7,6 +7,7 @@ from app.services.emoji_service import (
     deserialize_entities,
     first_custom_emoji_id,
     localize_custom_emoji_entities,
+    remove_custom_emoji_text,
     serialize_entities,
 )
 from app.services.i18n import localized_custom_welcome, without_default_welcome_decoration
@@ -62,3 +63,22 @@ def test_custom_welcome_removes_default_emoji_and_arrow_until_reset():
     assert without_default_welcome_decoration("👋 Hello\n10482 → Ten thousand") == (
         "Hello\n10482 Ten thousand"
     )
+
+
+def test_custom_emoji_placeholder_is_not_duplicated_in_english_welcome():
+    source = "👋 Welcome\n➡️ Send me a number"
+    entities = [
+        MessageEntity(type="custom_emoji", offset=0, length=2, custom_emoji_id="hand"),
+        MessageEntity(type="custom_emoji", offset=11, length=2, custom_emoji_id="arrow"),
+    ]
+    target = without_default_welcome_decoration(
+        remove_custom_emoji_text(source, entities)
+    )
+    localized, localized_entities = localize_custom_emoji_entities(
+        source,
+        entities,
+        target,
+    )
+
+    assert localized == "👋 Welcome\n➡️ Send me a number"
+    assert len(localized_entities) == 2
