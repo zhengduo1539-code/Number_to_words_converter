@@ -111,6 +111,29 @@ def localize_custom_emoji_entities(
     return result, localized_entities
 
 
+def remove_custom_emoji_text(
+    source_text: str,
+    source_entities: list[MessageEntity] | None,
+) -> str:
+    """Remove custom-emoji placeholder characters before reinserting entities.
+
+    Telegram stores a custom emoji as both visible placeholder text and an
+    entity. If the source text is reused as the localized target, inserting
+    the entity again would duplicate the emoji.
+    """
+    spans = []
+    for entity in (source_entities or []):
+        if entity.type != "custom_emoji" or not entity.custom_emoji_id:
+            continue
+        start = _utf16_to_index(source_text, entity.offset)
+        end = _utf16_to_index(source_text, entity.offset + entity.length)
+        spans.append((start, end))
+
+    for start, end in sorted(spans, reverse=True):
+        source_text = source_text[:start] + source_text[end:]
+    return source_text
+
+
 def first_visible_fallback(text: str, entities: list[MessageEntity] | None) -> str | None:
     """Return the first Unicode emoji-like character for a button fallback."""
     for character in text.strip():
