@@ -27,6 +27,7 @@ from app.db.repository import (
     mark_blocked,
     reset_admin_buttons,
     reset_language_messages,
+    reset_loading_message,
     reset_welcome_buttons,
     reset_welcome_message,
     set_setting,
@@ -41,6 +42,7 @@ from app.keyboards.customization import (
     cancel_markup,
     customization_markup,
     language_messages_markup,
+    loading_message_markup,
     reset_all_markup,
     style_markup,
     welcome_buttons_markup,
@@ -62,6 +64,7 @@ from app.states.workflows import (
     AdminButtonStates,
     BroadcastStates,
     LanguageMessageStates,
+    LoadingMessageStates,
     WelcomeButtonStates,
     WelcomeMessageStates,
 )
@@ -189,6 +192,23 @@ async def customization_callbacks(callback: CallbackQuery, settings: Settings, s
             f"🌐 Language Messages\n\nChoose your language: {menu_status}\nLanguage changed: {changed_status}",
             language_messages_markup(),
         )
+    elif action == "loading_message":
+        loading_status = "Customized" if await get_setting(session, "loading_text") else "Default"
+        await edit_or_answer(
+            callback,
+            f"⏳ Loading Message\n\nStatus: {loading_status}",
+            loading_message_markup(),
+        )
+    elif action == "loading_edit":
+        await state.set_state(LoadingMessageStates.waiting_text)
+        await edit_or_answer(
+            callback,
+            "Send the custom loading message now. Add an animated emoji if you want it to appear while numbers are being converted.",
+            cancel_markup(),
+        )
+    elif action == "loading_reset":
+        await reset_loading_message(session)
+        await edit_or_answer(callback, "Loading message reset to default.", loading_message_markup())
     elif action == "language_menu_edit":
         await state.set_state(LanguageMessageStates.waiting_menu)
         await edit_or_answer(
@@ -274,6 +294,7 @@ async def customization_callbacks(callback: CallbackQuery, settings: Settings, s
     elif action == "reset_confirm":
         await reset_welcome_message(session)
         await reset_language_messages(session)
+        await reset_loading_message(session)
         await reset_welcome_buttons(session)
         await reset_admin_buttons(session)
         await edit_or_answer(callback, "All customizations reset to defaults.", customization_markup())
@@ -379,6 +400,32 @@ async def save_language_changed_message(message: Message, state: FSMContext, ses
         "language_changed_entities",
         "Language-changed message",
     )
+
+
+@router.message(LoadingMessageStates.waiting_text)
+async def save_loading_message(message: Message, state: FSMContext, session) -> None:
+    if not message.text or not message.text.strip():
+        await message.answer(
+            "Please send a text message, or press Cancel.",
+            reply_markup=cancel_markup(),
+        )
+        return
+    await set_setting(session, "loading_text", message.text)
+    await set_setting(session, "loading_entities", serialize_entities(message.entities))
+    await state.clear()
+    await message.answer(
+        "Loading message saved. Preview:",
+        reply_markup=loading_message_markup(),
+    )
+    preview_entities = message.entities or []
+    preview_text = remove_custom_emoji_text(message.text, preview_entities)
+    if preview_entities:
+        preview_text, preview_entities = localize_custom_emoji_entities(
+            message.text,
+            preview_entities,
+            preview_text,
+        )
+    await message.answer(preview_text, entities=preview_entities or None)
 
 
 @router.message(WelcomeButtonStates.waiting_label)
