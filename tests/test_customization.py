@@ -82,3 +82,18 @@ def test_custom_emoji_placeholder_is_not_duplicated_in_english_welcome():
 
     assert localized == "👋 Welcome\n➡️ Send me a number"
     assert len(localized_entities) == 2
+
+
+def test_multiple_custom_emojis_keep_their_order_after_placeholder_removal():
+    source = "➡️👉 Send me a number"
+    entities = [
+        MessageEntity(type="custom_emoji", offset=0, length=2, custom_emoji_id="arrow"),
+        MessageEntity(type="custom_emoji", offset=2, length=2, custom_emoji_id="point"),
+    ]
+    localized, _ = localize_custom_emoji_entities(
+        source,
+        entities,
+        remove_custom_emoji_text(source, entities),
+    )
+
+    assert localized == source
