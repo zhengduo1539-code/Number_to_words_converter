@@ -10,6 +10,10 @@ class LanguageMessageStates(StatesGroup):
     waiting_changed = State()
 
 
+class LoadingMessageStates(StatesGroup):
+    waiting_text = State()
+
+
 class RequestLanguageStates(StatesGroup):
     waiting_text = State()
 
