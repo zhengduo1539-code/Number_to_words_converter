@@ -51,6 +51,7 @@ def test_language_normalization_and_localized_messages():
     assert normalize_language("zh-CN") == "zh"
     assert normalize_language("unknown") == "en"
     assert "10482" in text("invalid_number", "my")
+    assert text("loading", "my") != text("loading", "en")
 
 
 def test_custom_language_messages_localize_and_remove_default_symbol():
