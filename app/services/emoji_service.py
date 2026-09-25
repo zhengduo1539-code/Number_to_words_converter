@@ -82,6 +82,20 @@ def localize_custom_emoji_entities(
         source_line = source_before.count("\n")
         source_line_start = source_line_starts[min(source_line, len(source_line_starts) - 1)]
         source_column = _utf16_length(source_before[source_line_start:])
+        for previous_entity in custom_entities:
+            previous_start = _utf16_to_index(source_text, previous_entity.offset)
+            if previous_start >= source_start:
+                continue
+            previous_line = source_text[:previous_start].count("\n")
+            if previous_line == source_line:
+                previous_end = _utf16_to_index(
+                    source_text,
+                    previous_entity.offset + previous_entity.length,
+                )
+                source_column -= _utf16_length(
+                    source_text[previous_start:previous_end]
+                )
+        source_column = max(source_column, 0)
         target_line = min(source_line, len(localized_lines) - 1)
         target_line_text = localized_lines[target_line]
         target_column = min(source_column, _utf16_length(target_line_text))
