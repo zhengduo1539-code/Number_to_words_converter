@@ -6,7 +6,11 @@ from aiogram.types import Message
 
 from app.db.repository import DEFAULT_WELCOME, get_setting, list_welcome_buttons, upsert_user
 from app.keyboards.buttons import welcome_markup
-from app.services.emoji_service import deserialize_entities, localize_custom_emoji_entities
+from app.services.emoji_service import (
+    deserialize_entities,
+    localize_custom_emoji_entities,
+    remove_custom_emoji_text,
+)
 from app.services.i18n import (
     localized_custom_welcome,
     localized_default_welcome,
@@ -39,7 +43,9 @@ async def send_welcome(message: Message, session, bot, language: str = "en") -> 
         localized_text = (
             localized_custom_welcome(language, number_to_words("10482", language))
             if normalized_language != "en"
-            else without_default_welcome_decoration(text)
+            else without_default_welcome_decoration(
+                remove_custom_emoji_text(text, entities)
+            )
         )
         text, entities = localize_custom_emoji_entities(text, entities, localized_text)
     buttons = await list_welcome_buttons(session)
