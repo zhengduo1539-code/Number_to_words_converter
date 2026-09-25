@@ -51,6 +51,7 @@ from app.services.emoji_service import (
     first_custom_emoji_id,
     first_visible_fallback,
     localize_custom_emoji_entities,
+    remove_custom_emoji_text,
     serialize_entities,
 )
 from app.services.i18n import (
@@ -321,7 +322,9 @@ async def save_welcome_message(message: Message, state: FSMContext, session) -> 
     await set_setting(session, "welcome_entities", serialize_entities(message.entities))
     await state.clear()
     await message.answer("Welcome message saved. Preview:", reply_markup=welcome_markup(await list_welcome_buttons(session), (await message.bot.get_me()).username))
-    preview_text = without_default_welcome_decoration(message.text)
+    preview_text = without_default_welcome_decoration(
+        remove_custom_emoji_text(message.text, message.entities)
+    )
     preview_entities = message.entities or []
     if any(entity.type == "custom_emoji" and entity.custom_emoji_id for entity in preview_entities):
         preview_text, preview_entities = localize_custom_emoji_entities(
