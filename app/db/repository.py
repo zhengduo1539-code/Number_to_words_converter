@@ -171,6 +171,11 @@ async def reset_language_messages(session: MongoSession) -> None:
     await set_setting(session, "language_changed_entities", "[]")
 
 
+async def reset_loading_message(session: MongoSession) -> None:
+    await set_setting(session, "loading_text", "")
+    await set_setting(session, "loading_entities", "[]")
+
+
 async def stats(session: MongoSession) -> dict[str, int]:
     now = datetime.now(timezone.utc)
     users = session.database.users
