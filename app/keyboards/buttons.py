@@ -44,6 +44,7 @@ def welcome_markup(
     rows: list[list[InlineKeyboardButton]] = []
     share_labels = {
         "en": "🔗 Share Bot",
+        "bn": "🔗 বট শেয়ার করুন",
         "zh": "🔗 分享机器人",
         "my": "🔗 Bot ကိုမျှဝေမည်",
         "am": "🔗 ቦቱን አጋራ",

@@ -18,7 +18,7 @@ SCALES = (
     "novemdecillion", "vigintillion",
 )
 NUMBER_RE = re.compile(r"^[+-]?(?:(?:\d{1,3}(?:,\d{3})+)|\d+)(?:\.\d+)?$")
-SUPPORTED_LANGUAGE_CODES = frozenset({"en", "zh", "my", "am", "om", "es", "fr", "ru", "ar"})
+SUPPORTED_LANGUAGE_CODES = frozenset({"en", "bn", "zh", "my", "am", "om", "es", "fr", "ru", "ar"})
 
 
 def _under_thousand(number: int) -> str:
@@ -427,9 +427,76 @@ def _arabic_integer(number: int) -> str:
     return _arabic_join(parts)
 
 
+_BENGALI_ONES = (
+    "শূন্য", "এক", "দুই", "তিন", "চার", "পাঁচ", "ছয়", "সাত", "আট", "নয়",
+)
+_BENGALI_TEENS = (
+    "দশ", "এগারো", "বারো", "তেরো", "চৌদ্দ", "পনেরো",
+    "ষোলো", "সতেরো", "আঠারো", "উনিশ",
+)
+_BENGALI_TENS = ("", "", "বিশ", "ত্রিশ", "চল্লিশ", "পঞ্চাশ", "ষাট", "সত্তর", "আশি", "নব্বই")
+_BENGALI_COMPOUND_NUMBERS = {
+    21: "একুশ", 22: "বাইশ", 23: "তেইশ", 24: "চব্বিশ", 25: "পঁচিশ",
+    26: "ছাব্বিশ", 27: "সাতাশ", 28: "আটাশ", 29: "উনত্রিশ",
+    31: "একত্রিশ", 32: "বত্রিশ", 33: "তেত্রিশ", 34: "চৌত্রিশ",
+    35: "পঁয়ত্রিশ", 36: "ছত্রিশ", 37: "সাঁইত্রিশ", 38: "আটত্রিশ", 39: "উনচল্লিশ",
+    41: "একচল্লিশ", 42: "বিয়াল্লিশ", 43: "তেতাল্লিশ", 44: "চুয়াল্লিশ",
+    45: "পঁয়তাল্লিশ", 46: "ছেচল্লিশ", 47: "সাতচল্লিশ", 48: "আটচল্লিশ", 49: "উনপঞ্চাশ",
+    51: "একান্ন", 52: "বাহান্ন", 53: "তিপ্পান্ন", 54: "চুয়ান্ন",
+    55: "পঞ্চান্ন", 56: "ছাপ্পান্ন", 57: "সাতান্ন", 58: "আটান্ন", 59: "উনষাট",
+    61: "একষট্টি", 62: "বাষট্টি", 63: "তেষট্টি", 64: "চৌষট্টি",
+    65: "পঁয়ষট্টি", 66: "ছেষট্টি", 67: "সাতষট্টি", 68: "আটষট্টি", 69: "উনসত্তর",
+    71: "একাত্তর", 72: "বাহাত্তর", 73: "তিয়াত্তর", 74: "চুয়াত্তর",
+    75: "পঁচাত্তর", 76: "ছিয়াত্তর", 77: "সাতাত্তর", 78: "আটাত্তর", 79: "উনআশি",
+    81: "একাশি", 82: "বিরাশি", 83: "তিরাশি", 84: "চুরাশি",
+    85: "পঁচাশি", 86: "ছিয়াশি", 87: "সাতাশি", 88: "আটাশি", 89: "উননব্বই",
+    91: "একানব্বই", 92: "বিরানব্বই", 93: "তিরানব্বই", 94: "চুরানব্বই",
+    95: "পঁচানব্বই", 96: "ছিয়ানব্বই", 97: "সাতানব্বই", 98: "আটানব্বই", 99: "নিরানব্বই",
+}
+_BENGALI_HUNDREDS = ("", "একশ", "দুইশ", "তিনশ", "চারশ", "পাঁচশ", "ছয়শ", "সাতশ", "আটশ", "নয়শ")
+
+
+def _bengali_under_hundred(number: int) -> str:
+    if number < 10:
+        return _BENGALI_ONES[number]
+    if number < 20:
+        return _BENGALI_TEENS[number - 10]
+    return _BENGALI_COMPOUND_NUMBERS.get(
+        number,
+        _BENGALI_TENS[number // 10] + f" {_BENGALI_ONES[number % 10]}",
+    )
+
+
+def _bengali_under_thousand(number: int) -> str:
+    if number < 100:
+        return _bengali_under_hundred(number)
+    hundreds, remainder = divmod(number, 100)
+    result = _BENGALI_HUNDREDS[hundreds]
+    return f"{result} {_bengali_under_hundred(remainder)}" if remainder else result
+
+
+def _bengali_integer(number: int) -> str:
+    if number == 0:
+        return _BENGALI_ONES[0]
+    if number < 0:
+        return f"ঋণাত্মক {_bengali_integer(-number)}"
+
+    parts: list[str] = []
+    remainder = number
+    for unit, name in ((10**7, "কোটি"), (10**5, "লাখ"), (10**3, "হাজার")):
+        if remainder >= unit:
+            quotient, remainder = divmod(remainder, unit)
+            parts.append(f"{_bengali_integer(quotient)} {name}")
+    if remainder:
+        parts.append(_bengali_under_thousand(remainder))
+    return " ".join(parts)
+
+
 def _integer_in_language(number: int, language: str) -> str:
     if language == "en":
         return integer_to_words(number)
+    if language == "bn":
+        return _bengali_integer(number)
     if language == "zh":
         return _chinese_integer(number)
     if language == "my":
@@ -497,6 +564,7 @@ def _myanmar_integer(number: int) -> str:
 def _decimal_digits(fractional: str, language: str) -> str:
     digit_names = {
         "en": ONES,
+        "bn": _BENGALI_ONES,
         "zh": tuple("零一二三四五六七八九"),
         "my": ("သုည", "တစ်", "နှစ်", "သုံး", "လေး", "ငါး", "ခြောက်", "ခုနစ်", "ရှစ်", "ကိုး"),
         "am": ("ዜሮ", "አንድ", "ሁለት", "ሶስት", "አራት", "አምስት", "ስድስት", "ሰባት", "ስምንት", "ዘጠኝ"),
@@ -517,8 +585,8 @@ def number_to_words(value: str, language: str = "en") -> str:
         return result if language in {"zh", "my", "am", "om", "es", "fr", "ru"} else result
     negative = integer < 0
     magnitude = _integer_in_language(abs(integer), language)
-    prefixes = {"en": "Negative", "zh": "负", "my": "အနုတ်", "am": "አሉታዊ", "om": "negatiivii", "es": "menos", "fr": "moins", "ru": "минус", "ar": "سالب"}
-    separators = {"en": "point", "zh": "点", "my": "ဒသမ", "am": "ነጥብ", "om": "tuqaa", "es": "coma", "fr": "virgule", "ru": "целых", "ar": "فاصلة"}
+    prefixes = {"en": "Negative", "bn": "ঋণাত্মক", "zh": "负", "my": "အနုတ်", "am": "አሉታዊ", "om": "negatiivii", "es": "menos", "fr": "moins", "ru": "минус", "ar": "سالب"}
+    separators = {"en": "point", "bn": "দশমিক", "zh": "点", "my": "ဒသမ", "am": "ነጥብ", "om": "tuqaa", "es": "coma", "fr": "virgule", "ru": "целых", "ar": "فاصلة"}
     prefix = f"{prefixes[language]} " if negative else ""
     return f"{prefix}{magnitude} {separators[language]} {_decimal_digits(fractional, language)}"
 

@@ -29,6 +29,12 @@ def test_large_integer():
     assert integer_to_words(10**21) == "One sextillion"
 
 
+def test_bengali_number_forms():
+    assert number_to_words("21", "bn") == "একুশ"
+    assert number_to_words("10482", "bn") == "দশ হাজার চারশ বিরাশি"
+    assert number_to_words("-10.25", "bn") == "ঋণাত্মক দশ দশমিক দুই পাঁচ"
+
+
 @pytest.mark.parametrize("value", ["hello", "1,23", "1.", "--5", ""])
 def test_invalid_values(value):
     assert not is_number(value)

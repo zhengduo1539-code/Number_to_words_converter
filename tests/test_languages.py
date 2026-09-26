@@ -34,6 +34,7 @@ def test_request_language_button_is_localized():
 def test_supported_language_outputs():
     expected = {
         "en": "Ten thousand four hundred eighty-two",
+        "bn": "দশ হাজার চারশ বিরাশি",
         "zh": "一万零四百八十二",
         "my": "တစ်သောင်း လေးရာ ရှစ်ဆယ့်နှစ်",
         "am": "አስር ሺህ አራት መቶ ሰማንያ ሁለት",
@@ -49,9 +50,11 @@ def test_supported_language_outputs():
 
 def test_language_normalization_and_localized_messages():
     assert normalize_language("zh-CN") == "zh"
+    assert normalize_language("bn-BD") == "bn"
     assert normalize_language("unknown") == "en"
     assert "10482" in text("invalid_number", "my")
     assert text("loading", "my") != text("loading", "en")
+    assert text("loading", "bn") != text("loading", "en")
 
 
 def test_custom_language_messages_localize_and_remove_default_symbol():

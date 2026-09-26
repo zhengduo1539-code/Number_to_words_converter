@@ -13,6 +13,7 @@ class Language:
 
 LANGUAGES: tuple[Language, ...] = (
     Language("en", "American English", "🇺🇸 American English"),
+    Language("bn", "Bengali / Bangla (বাংলা)", "🇧🇩 Bengali / Bangla (বাংলা)"),
     Language("zh", "Chinese (Simplified)", "🇨🇳 Chinese (Simplified)"),
     Language("my", "Myanmar", "🇲🇲 Myanmar"),
     Language("am", "Amharic", "🇪🇹 Amharic"),
@@ -38,6 +39,20 @@ TEXTS: dict[str, dict[str, str]] = {
         "request_language_empty": "Please write the language you would like to request and send it.",
         "request_language_sent": "✅ Your language request has been sent to the administrators.",
         "request_language_failed": "Sorry, your language request could not be sent right now. Please try again later.",
+    },
+    "bn": {
+        "language_menu": "🌐 আপনার ভাষা নির্বাচন করুন:",
+        "language_changed": "✅ ভাষা {language}-এ পরিবর্তন করা হয়েছে।",
+        "invalid_number": "10482, -125, 10,482 অথবা 10.25-এর মতো একটি সঠিক সংখ্যা পাঠান।",
+        "too_large": "সংখ্যাটি অনেক বড় অথবা এই ফরম্যাট সমর্থিত নয়।",
+        "welcome": "👋 Numbers to Words Converter-এ স্বাগতম!\n\nযেকোনো সংখ্যা পাঠান, আমি সেটিকে {language} ভাষায় শব্দে রূপান্তর করব।\n\nউদাহরণ:\n10482 → {example}\n\nশুরু করতে একটি সংখ্যা পাঠান।",
+        "help": "10482-এর মতো একটি সংখ্যা পাঠান, আমি সেটিকে শব্দে রূপান্তর করব।",
+        "loading": "⏳ আপনার সংখ্যাটি রূপান্তর করা হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন...",
+        "request_language_button": "🌐 ভাষার অনুরোধ করুন",
+        "request_language_prompt": "আপনি কোন ভাষার অনুরোধ করতে চান? যে ভাষাটি যোগ করতে চান তার নাম এখানে লিখে পাঠান।",
+        "request_language_empty": "আপনি যে ভাষার অনুরোধ করতে চান তার নাম লিখে পাঠান।",
+        "request_language_sent": "✅ আপনার ভাষার অনুরোধ প্রশাসকদের কাছে পাঠানো হয়েছে।",
+        "request_language_failed": "দুঃখিত, এই মুহূর্তে আপনার ভাষার অনুরোধ পাঠানো যায়নি। পরে আবার চেষ্টা করুন।",
     },
     "zh": {
         "language_menu": "🌐 请选择语言：",
