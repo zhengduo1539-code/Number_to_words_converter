@@ -12,7 +12,11 @@ from app.services.emoji_service import (
     localize_custom_emoji_entities,
     remove_custom_emoji_text,
 )
-from app.services.i18n import normalize_language, text
+from app.services.i18n import (
+    normalize_language,
+    text,
+    without_default_language_decoration,
+)
 from app.services.number_converter import is_number, number_to_words
 
 router = Router(name="converter")
@@ -43,7 +47,10 @@ async def convert_handler(message: Message, session) -> None:
                 loading_entities,
             )
         else:
-            localized_loading = text("loading", language)
+            localized_loading = without_default_language_decoration(
+                "loading",
+                text("loading", language),
+            )
         loading_text, loading_entities = localize_custom_emoji_entities(
             loading_text,
             loading_entities,

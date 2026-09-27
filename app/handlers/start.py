@@ -40,24 +40,16 @@ async def send_welcome(message: Message, session, bot, language: str = "en") -> 
     else:
         entities = deserialize_entities(await get_setting(session, "welcome_entities", "[]"))
         normalized_language = normalize_language(language)
-        if normalized_language != "en":
-            # Custom welcome emoji entities belong to the default-language
-            # message. Do not copy those decorations into translated
-            # messages, where they can look like part of the translation.
-            text = localized_custom_welcome(
-                language,
-                number_to_words("10482", language),
-            )
-            entities = []
-        else:
+        if normalized_language == "en":
             localized_text = without_default_welcome_decoration(
                 remove_custom_emoji_text(text, entities)
             )
-            text, entities = localize_custom_emoji_entities(
-                text,
-                entities,
-                localized_text,
+        else:
+            localized_text = localized_custom_welcome(
+                language,
+                number_to_words("10482", language),
             )
+        text, entities = localize_custom_emoji_entities(text, entities, localized_text)
     buttons = await list_welcome_buttons(session)
     me = await bot.get_me()
     await message.answer(

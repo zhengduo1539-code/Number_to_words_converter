@@ -62,3 +62,6 @@ def test_custom_language_messages_localize_and_remove_default_symbol():
     assert localized_custom_language_text("language_menu", "zh", custom) == "请选择语言："
     assert localized_custom_language_text("language_menu", "en", custom) == "🎉 Choose your language:"
     assert without_default_language_decoration("language_changed", "✅ 🎉 Language changed") == "🎉 Language changed"
+    assert without_default_language_decoration("loading", text("loading", "zh")) == (
+        "正在转换您的数字，请稍候……"
+    )

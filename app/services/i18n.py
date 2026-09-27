@@ -194,6 +194,7 @@ def without_default_language_decoration(key: str, value: str) -> str:
     symbol = {
         "language_menu": "🌐",
         "language_changed": "✅",
+        "loading": "⏳",
     }.get(key)
     if symbol:
         value = value.replace(f"{symbol} ", "", 1)

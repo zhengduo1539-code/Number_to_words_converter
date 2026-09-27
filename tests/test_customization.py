@@ -127,7 +127,7 @@ def test_trailing_custom_emoji_stays_at_the_end_of_a_translated_line():
 
 
 @pytest.mark.asyncio
-async def test_translated_welcome_does_not_copy_default_language_custom_emojis(monkeypatch):
+async def test_translated_welcome_preserves_default_language_custom_emojis(monkeypatch):
     source = "👋 Welcome\n🎉 Send me a number"
     entities = [
         MessageEntity(type="custom_emoji", offset=0, length=2, custom_emoji_id="hand"),
@@ -162,6 +162,6 @@ async def test_translated_welcome_does_not_copy_default_language_custom_emojis(m
 
     rendered_text = message.answer.await_args.args[0]
     rendered_entities = message.answer.await_args.kwargs["entities"]
-    assert "👋" not in rendered_text
-    assert "🎉" not in rendered_text
-    assert rendered_entities is None
+    assert "👋" in rendered_text
+    assert "🎉" in rendered_text
+    assert [entity.custom_emoji_id for entity in rendered_entities] == ["hand", "party"]
