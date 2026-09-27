@@ -1,7 +1,11 @@
 import json
+from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
+import pytest
 from aiogram.types import MessageEntity
 
+import app.handlers.start as start_handler
 from app.keyboards.customization import action_type_markup, style_markup
 from app.services.emoji_service import (
     deserialize_entities,
@@ -97,3 +101,67 @@ def test_multiple_custom_emojis_keep_their_order_after_placeholder_removal():
     )
 
     assert localized == source
+
+
+def test_trailing_custom_emoji_stays_at_the_end_of_a_translated_line():
+    source = "Converting your number, please wait... 🎉"
+    entities = [
+        MessageEntity(
+            type="custom_emoji",
+            offset=len("Converting your number, please wait... ".encode("utf-16-le")) // 2,
+            length=2,
+            custom_emoji_id="trailing",
+        )
+    ]
+
+    localized, localized_entities = localize_custom_emoji_entities(
+        source,
+        entities,
+        "Convirtiendo tu número, espera un momento...",
+    )
+
+    assert localized == "Convirtiendo tu número, espera un momento... 🎉"
+    assert localized_entities[0].offset + localized_entities[0].length == (
+        len(localized.encode("utf-16-le")) // 2
+    )
+
+
+@pytest.mark.asyncio
+async def test_translated_welcome_does_not_copy_default_language_custom_emojis(monkeypatch):
+    source = "👋 Welcome\n🎉 Send me a number"
+    entities = [
+        MessageEntity(type="custom_emoji", offset=0, length=2, custom_emoji_id="hand"),
+        MessageEntity(
+            type="custom_emoji",
+            offset=len("👋 Welcome\n".encode("utf-16-le")) // 2,
+            length=2,
+            custom_emoji_id="party",
+        ),
+    ]
+
+    async def fake_get_setting(_session, key, default=""):
+        if key == "welcome_text":
+            return source
+        if key == "welcome_entities":
+            return serialize_entities(entities)
+        return default
+
+    monkeypatch.setattr(start_handler, "get_setting", fake_get_setting)
+    monkeypatch.setattr(
+        start_handler,
+        "list_welcome_buttons",
+        AsyncMock(return_value=[]),
+    )
+
+    message = SimpleNamespace(answer=AsyncMock())
+    bot = SimpleNamespace(
+        get_me=AsyncMock(return_value=SimpleNamespace(username="numbers_bot"))
+    )
+
+    await start_handler.send_welcome(message, object(), bot, "my")
+
+    rendered_text = message.answer.await_args.args[0]
+    rendered_entities = message.answer.await_args.kwargs["entities"]
+    assert "👋" not in rendered_text
+    assert "🎉" not in rendered_text
+    assert rendered_entities is None
