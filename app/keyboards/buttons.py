@@ -48,6 +48,7 @@ def welcome_markup(
         "zh": "🔗 分享机器人",
         "my": "🔗 Bot ကိုမျှဝေမည်",
         "am": "🔗 ቦቱን አጋራ",
+        "am_latn": "🔗 Botun agara",
         "om": "🔗 Botii qoodi",
         "es": "🔗 Compartir bot",
         "fr": "🔗 Partager le bot",

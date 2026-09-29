@@ -17,6 +17,7 @@ LANGUAGES: tuple[Language, ...] = (
     Language("zh", "Chinese (Simplified)", "🇨🇳 Chinese (Simplified)"),
     Language("my", "Myanmar", "🇲🇲 Myanmar"),
     Language("am", "Amharic", "🇪🇹 Amharic"),
+    Language("am_latn", "Amharic (Latin)", "🇪🇹 Amharic (Latin)"),
     Language("om", "Afaan Oromo", "🇪🇹 Afaan Oromo"),
     Language("es", "Spanish", "🇪🇸 Spanish"),
     Language("fr", "French", "🇫🇷 French"),
@@ -96,6 +97,20 @@ TEXTS: dict[str, dict[str, str]] = {
         "request_language_sent": "✅ የቋንቋ ጥያቄዎ ለአስተዳዳሪዎች ተልኳል።",
         "request_language_failed": "የቋንቋ ጥያቄዎ አሁን ሊላክ አልቻለም። እባክዎ ቆይተው ይሞክሩ።",
     },
+    "am_latn": {
+        "language_menu": "🌐 Qwanqwaown yimeritu:",
+        "language_changed": "✅ Qwanqaw we-de {language} teqeyirwal.",
+        "invalid_number": "Ibakwo tikiklegna tiqur yelaku, lemesale 10482, -125, 10,482 weym 10.25.",
+        "too_large": "Tiqur-u betam tilik new weym qirts-u ayidegimim.",
+        "welcome": "👋 We-de Numbers to Words Converter enqwan dehna metu!\n\nManinyawim tiqur yisaku, we-de {language} qalat e-keyiralehu.\n\nMisema:\n10482 → {example}\n\nLe-mejemer tiqur yisaku.",
+        "help": "Ende 10482 yale tiqur yisaku, we-de qalat e-keyiralehu.",
+        "loading": "⏳ Tiqurwon e-keyirn new, ibakwo yitebeku...",
+        "request_language_button": "🌐 Qwanqwa yiqu",
+        "request_language_prompt": "Min aynet qwanqwa meteyek felgale? Ezi yemitayekutn qwanqwa sim yikef.",
+        "request_language_empty": "Yemitayekutn qwanqwa sim yikef ena yisak.",
+        "request_language_sent": "✅ Yeqwanqwa tekiqaw le-areditoroch tesetwal.",
+        "request_language_failed": "Yikirta, yeqwanqwa tekiqaw bemitayekut gize mayiset alchalkum. Kezi behwala yimokeru.",
+    },
     "om": {
         "language_menu": "🌐 Afaan itti fayyadamuu barbaaddu filadhu:",
         "language_changed": "✅ Afaan gara {language} tti jijjiirameera.",
@@ -172,7 +187,10 @@ TEXTS: dict[str, dict[str, str]] = {
 def normalize_language(code: str | None) -> str:
     if not code:
         return "en"
-    short_code = code.lower().replace("_", "-").split("-")[0]
+    normalized_code = code.lower().replace("_", "-")
+    if normalized_code == "am-latn":
+        return "am_latn"
+    short_code = normalized_code.split("-")[0]
     return short_code if short_code in LANGUAGE_BY_CODE else "en"
 
 

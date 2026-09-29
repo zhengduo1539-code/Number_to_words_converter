@@ -38,6 +38,7 @@ def test_supported_language_outputs():
         "zh": "一万零四百八十二",
         "my": "တစ်သောင်း လေးရာ ရှစ်ဆယ့်နှစ်",
         "am": "አስር ሺህ አራት መቶ ሰማንያ ሁለት",
+        "am_latn": "asir shih arat meto semanya hulet",
         "om": "kudhan kuma fi afur dhibba fi saddeetama fi lama",
         "es": "diez mil cuatrocientos ochenta y dos",
         "fr": "dix mille quatre cent quatre-vingt-deux",
@@ -51,10 +52,13 @@ def test_supported_language_outputs():
 def test_language_normalization_and_localized_messages():
     assert normalize_language("zh-CN") == "zh"
     assert normalize_language("bn-BD") == "bn"
+    assert normalize_language("am-Latn") == "am_latn"
+    assert normalize_language("am_latn") == "am_latn"
     assert normalize_language("unknown") == "en"
     assert "10482" in text("invalid_number", "my")
     assert text("loading", "my") != text("loading", "en")
     assert text("loading", "bn") != text("loading", "en")
+    assert "Tiqurwon" in text("loading", "am-Latn")
 
 
 def test_custom_language_messages_localize_and_remove_default_symbol():

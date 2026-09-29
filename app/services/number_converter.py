@@ -18,7 +18,9 @@ SCALES = (
     "novemdecillion", "vigintillion",
 )
 NUMBER_RE = re.compile(r"^[+-]?(?:(?:\d{1,3}(?:,\d{3})+)|\d+)(?:\.\d+)?$")
-SUPPORTED_LANGUAGE_CODES = frozenset({"en", "bn", "zh", "my", "am", "om", "es", "fr", "ru", "ar"})
+SUPPORTED_LANGUAGE_CODES = frozenset({
+    "en", "bn", "zh", "my", "am", "am_latn", "om", "es", "fr", "ru", "ar",
+})
 
 
 def _under_thousand(number: int) -> str:
@@ -308,6 +310,45 @@ def _amharic_integer(number: int) -> str:
     return " ".join(parts)
 
 
+def _amharic_latin_under_thousand(number: int) -> str:
+    ones = ("zero", "and", "hulet", "sost", "arat", "ammist", "sidist", "sebat", "simint", "zetegn")
+    tens = ("", "", "haya", "selasa", "arba", "hamsa", "silsa", "seba", "semanya", "zetegna")
+    if number < 10:
+        return ones[number]
+    if number < 20:
+        return "asir" if number == 10 else "asra " + ones[number - 10]
+    if number < 100:
+        ten, one = divmod(number, 10)
+        return tens[ten] + (f" {ones[one]}" if one else "")
+    hundred, remainder = divmod(number, 100)
+    prefix = "meto" if hundred == 1 else f"{ones[hundred]} meto"
+    return prefix + (f" {_amharic_latin_under_thousand(remainder)}" if remainder else "")
+
+
+def _amharic_latin_integer(number: int) -> str:
+    if number == 0:
+        return "zero"
+    if number < 0:
+        return f"alutawi {_amharic_latin_integer(-number)}"
+    scales = ("", "shih", "milyon", "bilyon", "tirilyon")
+    groups: list[int] = []
+    while number:
+        number, group = divmod(number, 1000)
+        groups.append(group)
+    if len(groups) > len(scales):
+        raise ValueError("Number is too large for Amharic (Latin) scale names")
+    parts: list[str] = []
+    for index in range(len(groups) - 1, -1, -1):
+        if not groups[index]:
+            continue
+        if index == 0:
+            parts.append(_amharic_latin_under_thousand(groups[index]))
+        else:
+            prefix = "" if groups[index] == 1 else _amharic_latin_under_thousand(groups[index]) + " "
+            parts.append(prefix + scales[index])
+    return " ".join(parts)
+
+
 def _oromo_under_thousand(number: int) -> str:
     ones = ("zeero", "tokko", "lama", "sadii", "afur", "shan", "ja'a", "torba", "saddeet", "sagal")
     tens = ("", "", "digdama", "soddoma", "afurtama", "shantama", "jaatama", "torbaatama", "saddeetama", "sagaltama")
@@ -503,6 +544,8 @@ def _integer_in_language(number: int, language: str) -> str:
         return _myanmar_integer(number)
     if language == "am":
         return _amharic_integer(number)
+    if language == "am_latn":
+        return _amharic_latin_integer(number)
     if language == "om":
         return _oromo_integer(number)
     if language == "es":
@@ -568,6 +611,7 @@ def _decimal_digits(fractional: str, language: str) -> str:
         "zh": tuple("零一二三四五六七八九"),
         "my": ("သုည", "တစ်", "နှစ်", "သုံး", "လေး", "ငါး", "ခြောက်", "ခုနစ်", "ရှစ်", "ကိုး"),
         "am": ("ዜሮ", "አንድ", "ሁለት", "ሶስት", "አራት", "አምስት", "ስድስት", "ሰባት", "ስምንት", "ዘጠኝ"),
+        "am_latn": ("zero", "and", "hulet", "sost", "arat", "ammist", "sidist", "sebat", "simint", "zetegn"),
         "om": ("zeero", "tokko", "lama", "sadii", "afur", "shan", "ja'a", "torba", "saddeet", "sagal"),
         "es": ("cero", "uno", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve"),
         "fr": ("zéro", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf"),
@@ -579,14 +623,16 @@ def _decimal_digits(fractional: str, language: str) -> str:
 
 def number_to_words(value: str, language: str = "en") -> str:
     integer, fractional = _parse_number(value)
+    language_aliases = {"am-latn": "am_latn", "am_latn": "am_latn"}
+    language = language_aliases.get(language.lower().replace("_", "-"), language)
     language = language if language in SUPPORTED_LANGUAGE_CODES else "en"
     if fractional is None:
         result = _integer_in_language(integer, language)
-        return result if language in {"zh", "my", "am", "om", "es", "fr", "ru"} else result
+        return result
     negative = integer < 0
     magnitude = _integer_in_language(abs(integer), language)
-    prefixes = {"en": "Negative", "bn": "ঋণাত্মক", "zh": "负", "my": "အနုတ်", "am": "አሉታዊ", "om": "negatiivii", "es": "menos", "fr": "moins", "ru": "минус", "ar": "سالب"}
-    separators = {"en": "point", "bn": "দশমিক", "zh": "点", "my": "ဒသမ", "am": "ነጥብ", "om": "tuqaa", "es": "coma", "fr": "virgule", "ru": "целых", "ar": "فاصلة"}
+    prefixes = {"en": "Negative", "bn": "ঋণাত্মক", "zh": "负", "my": "အနုတ်", "am": "አሉታዊ", "am_latn": "alutawi", "om": "negatiivii", "es": "menos", "fr": "moins", "ru": "минус", "ar": "سالب"}
+    separators = {"en": "point", "bn": "দশমিক", "zh": "点", "my": "ဒသမ", "am": "ነጥብ", "am_latn": "netib", "om": "tuqaa", "es": "coma", "fr": "virgule", "ru": "целых", "ar": "فاصلة"}
     prefix = f"{prefixes[language]} " if negative else ""
     return f"{prefix}{magnitude} {separators[language]} {_decimal_digits(fractional, language)}"
 
