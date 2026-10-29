@@ -9,7 +9,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from app.config import Settings
-from app.db.repository import get_setting, set_user_language
+from app.db.repository import get_language_button_icons, get_setting, set_user_language
 from app.keyboards.language import language_markup
 from app.services.emoji_service import deserialize_entities, localize_custom_emoji_entities
 from app.services.i18n import (
@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 @router.message(Command("lang"))
 async def language_command(message: Message, session) -> None:
     current = normalize_language(await _current_language(session, message.from_user.id))
+    icon_ids = await get_language_button_icons(session)
     custom_text = await get_setting(session, "language_menu_text")
     if custom_text:
         menu_text = localized_custom_language_text("language_menu", current, custom_text)
@@ -40,11 +41,24 @@ async def language_command(message: Message, session) -> None:
     else:
         menu_text = text("language_menu", current)
         entities = []
-    await message.answer(
-        menu_text,
-        entities=entities or None,
-        reply_markup=language_markup(current),
-    )
+    try:
+        await message.answer(
+            menu_text,
+            entities=entities or None,
+            reply_markup=language_markup(current, icon_ids),
+        )
+    except TelegramBadRequest as error:
+        if not icon_ids:
+            raise
+        logger.warning(
+            "Telegram rejected custom language-button icons; sending the default keyboard: %s",
+            error,
+        )
+        await message.answer(
+            menu_text,
+            entities=entities or None,
+            reply_markup=language_markup(current),
+        )
 
 
 @router.callback_query(F.data == "request_language")
