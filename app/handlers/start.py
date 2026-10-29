@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from html import escape
 import logging
+from html import escape
 
 from aiogram import Router
 from aiogram.exceptions import TelegramBadRequest
