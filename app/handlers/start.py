@@ -27,6 +27,58 @@ router = Router(name="start")
 logger = logging.getLogger(__name__)
 
 
+def _utf16_to_index(value: str, offset: int) -> int:
+    """Translate Telegram's UTF-16 entity offset into a Python string index."""
+    if offset < 0:
+        return -1
+    units = 0
+    for index, character in enumerate(value):
+        if units == offset:
+            return index
+        units += len(character.encode("utf-16-le")) // 2
+        if units > offset:
+            return -1
+    return len(value) if units == offset else -1
+
+
+def _custom_welcome_rich_html(message_text: str, entities: list) -> str | None:
+    """Format a custom welcome as rich paragraphs without changing its visible text.
+
+    Only Telegram custom-emoji entities are converted. If any entity offset is
+    invalid or an unsupported formatting entity is present, use the old sender.
+    """
+    custom_entities = []
+    for entity in entities:
+        if entity.type != "custom_emoji" or not entity.custom_emoji_id:
+            return None
+        start = _utf16_to_index(message_text, entity.offset)
+        end = _utf16_to_index(message_text, entity.offset + entity.length)
+        if start < 0 or end <= start:
+            return None
+        custom_entities.append((start, end, entity.custom_emoji_id))
+
+    custom_entities.sort(key=lambda item: item[0])
+    parts = []
+    cursor = 0
+    for start, end, emoji_id in custom_entities:
+        if start < cursor:
+            return None
+        parts.append(escape(message_text[cursor:start]))
+        placeholder = escape(message_text[start:end])
+        safe_emoji_id = escape(emoji_id, quote=True)
+        parts.append(f'<tg-emoji emoji-id="{safe_emoji_id}">{placeholder}</tg-emoji>')
+        cursor = end
+    parts.append(escape(message_text[cursor:]))
+
+    escaped_text = "".join(parts)
+    paragraphs = escaped_text.split("\n\n")
+    rendered_paragraphs = [
+        f"<p>{paragraph.replace(chr(10), '<br/>')}</p>"
+        for paragraph in paragraphs
+    ]
+    return "".join(rendered_paragraphs)
+
+
 def _default_welcome_rich_html(message_text: str) -> str | None:
     """Build a structured rich message only from the known default welcome layout.
 
@@ -70,8 +122,8 @@ async def send_welcome(message: Message, session, bot, language: str = "en") -> 
         text = localized_default_welcome(language, number_to_words("10482", language))
         entities = []
     else:
-        # Keep any existing customized welcome message on the legacy path so
-        # its saved Telegram entities, custom emoji, and current layout remain intact.
+        # Keep the stored message and its custom emoji entities untouched in the
+        # database; the Rich Message sender below converts them only for delivery.
         entities = deserialize_entities(await get_setting(session, "welcome_entities", "[]"))
         normalized_language = normalize_language(language)
         if normalized_language == "en":
@@ -88,24 +140,27 @@ async def send_welcome(message: Message, session, bot, language: str = "en") -> 
     me = await bot.get_me()
     reply_markup = welcome_markup(buttons, me.username, language)
 
-    if is_default_welcome:
-        rich_html = _default_welcome_rich_html(text)
-        send_rich_message = getattr(bot, "send_rich_message", None)
-        if rich_html and callable(send_rich_message):
-            try:
-                await send_rich_message(
-                    chat_id=message.chat.id,
-                    rich_message=InputRichMessage(html=rich_html),
-                    reply_markup=reply_markup,
-                )
-                return
-            except (TelegramBadRequest, TypeError, ValueError) as error:
-                # A rejected rich payload should not prevent the user seeing the
-                # welcome message; send the exact legacy text instead.
-                logger.warning(
-                    "Could not send rich welcome message; falling back to normal message: %s",
-                    error,
-                )
+    rich_html = (
+        _default_welcome_rich_html(text)
+        if is_default_welcome
+        else _custom_welcome_rich_html(text, entities)
+    )
+    send_rich_message = getattr(bot, "send_rich_message", None)
+    if rich_html and callable(send_rich_message):
+        try:
+            await send_rich_message(
+                chat_id=message.chat.id,
+                rich_message=InputRichMessage(html=rich_html),
+                reply_markup=reply_markup,
+            )
+            return
+        except (TelegramBadRequest, TypeError, ValueError) as error:
+            # A rejected rich payload should not prevent the user seeing the
+            # welcome message; send the exact legacy text instead.
+            logger.warning(
+                "Could not send rich welcome message; falling back to normal message: %s",
+                error,
+            )
 
     await message.answer(
         text,
