@@ -49,6 +49,8 @@ def welcome_markup(
         "my": "🔗 Bot ကိုမျှဝေမည်",
         "am": "🔗 ቦቱን አጋራ",
         "am_latn": "🔗 Botun agara",
+        "si": "🔗 Share Bot",
+        "ta": "🔗 Share Bot",
         "om": "🔗 Botii qoodi",
         "es": "🔗 Compartir bot",
         "fr": "🔗 Partager le bot",
@@ -60,7 +62,7 @@ def welcome_markup(
         label = button_text(item.label, item.fallback_emoji)
         if item.button_type == "share":
             if item.label == "🔗 Share Bot":
-                label = share_labels[language]
+                label = share_labels.get(language, "🔗 Share Bot")
             username = bot_username or "this_bot"
             url = f"https://t.me/share/url?url=https://t.me/{username}&text=Try%20Numbers%20to%20Words%20Converter"
             rows.append([compatible_button(label, url=url, style=item.style, icon_custom_emoji_id=item.icon_custom_emoji_id)])
