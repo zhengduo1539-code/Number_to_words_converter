@@ -5,6 +5,10 @@ class WelcomeMessageStates(StatesGroup):
     waiting_text = State()
 
 
+class RichWelcomeStates(StatesGroup):
+    waiting_field = State()
+
+
 class LanguageMessageStates(StatesGroup):
     waiting_menu = State()
     waiting_changed = State()

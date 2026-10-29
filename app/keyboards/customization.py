@@ -45,7 +45,28 @@ def welcome_message_markup() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [compatible_button("✏️ Edit", callback_data="ctm:welcome_edit", style="primary"),
          compatible_button("♻️ Reset", callback_data="ctm:welcome_reset", style="danger")],
+        [compatible_button("🧩 Rich Message Layout", callback_data="ctm:rich_layout", style="primary")],
         [compatible_button("⬅️ Back", callback_data="ctm:home", style="primary")],
+    ])
+
+
+def rich_welcome_layout_markup(layout: dict, customized: bool) -> InlineKeyboardMarkup:
+    enabled = lambda key: "✅" if layout.get(key, True) else "❌"
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [compatible_button("✏️ Edit Heading", callback_data="ctm:rich_edit:heading", style="primary"),
+         compatible_button("✏️ Edit Body", callback_data="ctm:rich_edit:body", style="primary")],
+        [compatible_button("✏️ Edit Example Label", callback_data="ctm:rich_edit:example_heading", style="primary"),
+         compatible_button("✏️ Edit Example", callback_data="ctm:rich_edit:example", style="primary")],
+        [compatible_button("✏️ Edit Footer", callback_data="ctm:rich_edit:footer", style="primary")],
+        [compatible_button(f"{enabled('enabled')} Rich Messages", callback_data="ctm:rich_toggle:enabled", style="primary"),
+         compatible_button(f"{enabled('show_heading')} Heading", callback_data="ctm:rich_toggle:show_heading", style="primary")],
+        [compatible_button(f"{enabled('show_divider')} Divider", callback_data="ctm:rich_toggle:show_divider", style="primary"),
+         compatible_button(f"{enabled('show_example')} Example", callback_data="ctm:rich_toggle:show_example", style="primary")],
+        [compatible_button(f"{enabled('monospace')} Monospace", callback_data="ctm:rich_toggle:monospace", style="primary"),
+         compatible_button(f"{enabled('show_footer')} Footer", callback_data="ctm:rich_toggle:show_footer", style="primary")],
+        [compatible_button("👁 Preview", callback_data="ctm:rich_preview", style="success"),
+         compatible_button("♻️ Reset Layout", callback_data="ctm:rich_reset", style="danger")],
+        [compatible_button("⬅️ Back", callback_data="ctm:welcome", style="primary")],
     ])
 
 

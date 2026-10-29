@@ -22,6 +22,13 @@ from app.services.i18n import (
     without_default_welcome_decoration,
 )
 from app.services.number_converter import number_to_words
+from app.services.rich_welcome import (
+    RICH_LAYOUT_SETTING,
+    apply_layout_flags,
+    parse_rich_layout,
+    render_rich_layout,
+    rich_layout_from_text,
+)
 
 router = Router(name="start")
 logger = logging.getLogger(__name__)
@@ -140,11 +147,32 @@ async def send_welcome(message: Message, session, bot, language: str = "en") -> 
     me = await bot.get_me()
     reply_markup = welcome_markup(buttons, me.username, language)
 
-    rich_html = (
-        _default_welcome_rich_html(text)
-        if is_default_welcome
-        else _custom_welcome_rich_html(text, entities)
+    saved_layout = parse_rich_layout(
+        await get_setting(session, RICH_LAYOUT_SETTING, "")
     )
+    if saved_layout is not None:
+        if normalize_language(language) == "en":
+            active_layout = saved_layout
+        else:
+            # Keep each language's existing localized copy; the persisted
+            # template customizes English content while display switches apply
+            # consistently to translated users too.
+            active_layout = apply_layout_flags(
+                rich_layout_from_text(
+                    text,
+                    entities,
+                    is_default_welcome=is_default_welcome,
+                ),
+                saved_layout,
+            )
+        rich_html = render_rich_layout(active_layout)
+    else:
+        rich_html = (
+            _default_welcome_rich_html(text)
+            if is_default_welcome
+            else _custom_welcome_rich_html(text, entities)
+        )
+
     send_rich_message = getattr(bot, "send_rich_message", None)
     if rich_html and callable(send_rich_message):
         try:
