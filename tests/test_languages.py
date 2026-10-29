@@ -6,7 +6,7 @@ import pytest
 from app.db.models import WelcomeButton
 from app.handlers import language as language_handler
 from app.keyboards.buttons import welcome_markup
-from app.keyboards.customization import language_selection_buttons_markup
+from app.keyboards.customization import language_messages_markup, language_selection_buttons_markup
 from app.keyboards.language import language_markup
 from app.services.i18n import (
     LANGUAGES,
@@ -73,6 +73,88 @@ def test_request_language_button_is_localized():
     ][0]
     assert request_button.text == "🌐 طلب لغة"
 
+
+
+
+def test_language_messages_customization_includes_request_prompt_and_confirmation():
+    markup = language_messages_markup()
+    callbacks = {
+        button.callback_data
+        for row in markup.inline_keyboard
+        for button in row
+    }
+
+    assert "ctm:request_language_prompt_edit" in callbacks
+    assert "ctm:request_language_prompt_reset" in callbacks
+    assert "ctm:request_language_sent_edit" in callbacks
+    assert "ctm:request_language_sent_reset" in callbacks
+
+
+@pytest.mark.parametrize(
+    ("setting_prefix", "message_key", "custom_text"),
+    [
+        ("request_language_prompt", "request_language_prompt", "✨ Tell us the language to add."),
+        ("request_language_sent", "request_language_sent", "✅ Your request is now with the team."),
+    ],
+)
+async def test_request_language_custom_messages_are_used_for_english(
+    monkeypatch,
+    setting_prefix,
+    message_key,
+    custom_text,
+):
+    session = object()
+    callback = SimpleNamespace(
+        from_user=SimpleNamespace(id=12345),
+        answer=AsyncMock(),
+        message=SimpleNamespace(answer=AsyncMock()),
+    )
+    state = SimpleNamespace(set_state=AsyncMock())
+
+    async def current_language(_session, _user_id):
+        return "en"
+
+    async def get_setting(_session, key, default=""):
+        values = {
+            f"{setting_prefix}_text": custom_text,
+            f"{setting_prefix}_entities": "[]",
+        }
+        return values.get(key, default)
+
+    monkeypatch.setattr(language_handler, "_current_language", current_language)
+    monkeypatch.setattr(language_handler, "get_setting", get_setting)
+
+    if message_key == "request_language_prompt":
+        await language_handler.request_language_callback(callback, session, state)
+        callback.message.answer.assert_awaited_once_with(custom_text, entities=None)
+    else:
+        message = SimpleNamespace(
+            text="Spanish",
+            from_user=SimpleNamespace(id=12345, first_name="Tester", username="tester"),
+            answer=AsyncMock(),
+        )
+        state.clear = AsyncMock()
+        bot = SimpleNamespace(send_message=AsyncMock())
+        settings = SimpleNamespace(admin_ids=[999])
+        await language_handler.request_language_message(
+            message,
+            state,
+            session,
+            settings,
+            bot,
+        )
+        message.answer.assert_awaited_once_with(custom_text.removeprefix("✅ "), entities=None)
+        state.clear.assert_awaited_once()
+        bot.send_message.assert_awaited_once()
+
+
+def test_custom_request_sent_confirmation_removes_default_checkmark_for_translations():
+    from app.services.i18n import localized_custom_language_text
+
+    custom = "✅ Thanks, we received your request."
+    localized = localized_custom_language_text("request_language_sent", "my", custom)
+    assert not localized.startswith("✅ ")
+    assert localized == text("request_language_sent", "my")
 
 
 def test_share_button_falls_back_to_english_for_sinhala_and_tamil():
