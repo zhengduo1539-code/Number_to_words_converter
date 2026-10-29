@@ -45,6 +45,22 @@ def test_language_markup_applies_per_language_custom_emoji_icons():
     assert len(buttons) == len(LANGUAGES)
 
 
+def test_language_markup_hides_default_flag_only_when_custom_emoji_is_configured():
+    markup = language_markup("en", {"si": "custom-emoji-si"})
+    buttons = {
+        button.callback_data: button
+        for row in markup.inline_keyboard
+        for button in row
+        if button.callback_data and button.callback_data.startswith("lang:")
+    }
+
+    assert buttons["lang:si"].text == "Sinhala (සිංහල)"
+    assert buttons["lang:si"].icon_custom_emoji_id == "custom-emoji-si"
+    assert buttons["lang:ta"].text == "🇮🇳 Tamil (தமிழ்)"
+    assert buttons["lang:ta"].icon_custom_emoji_id is None
+    assert buttons["lang:en"].text == "🇺🇸 American English"
+
+
 def test_language_button_customization_menu_covers_every_language():
     custom_icons = {"si": "custom-emoji-si"}
     markup = language_selection_buttons_markup(custom_icons)
