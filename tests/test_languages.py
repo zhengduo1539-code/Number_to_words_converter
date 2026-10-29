@@ -1,4 +1,10 @@
+from types import SimpleNamespace
+from unittest.mock import AsyncMock
+
+import pytest
+
 from app.db.models import WelcomeButton
+from app.handlers import language as language_handler
 from app.keyboards.buttons import welcome_markup
 from app.keyboards.language import language_markup
 from app.services.i18n import (
@@ -45,6 +51,42 @@ def test_share_button_falls_back_to_english_for_sinhala_and_tamil():
             "https://t.me/share/url?url=https://t.me/example_bot"
             "&text=Try%20Numbers%20to%20Words%20Converter"
         )
+
+
+
+@pytest.mark.parametrize("language", ["si", "ta"])
+async def test_language_selection_removes_menu_buttons_and_sends_welcome(
+    monkeypatch,
+    language,
+):
+    session = object()
+    bot = object()
+    message = SimpleNamespace(
+        edit_reply_markup=AsyncMock(),
+        edit_text=AsyncMock(),
+    )
+    callback = SimpleNamespace(
+        data=f"lang:{language}",
+        from_user=SimpleNamespace(id=12345),
+        message=message,
+        answer=AsyncMock(),
+    )
+    set_language = AsyncMock()
+    send_welcome = AsyncMock()
+
+    async def get_empty_setting(_session, _key, default=""):
+        return ""
+
+    monkeypatch.setattr(language_handler, "set_user_language", set_language)
+    monkeypatch.setattr(language_handler, "get_setting", get_empty_setting)
+    monkeypatch.setattr(language_handler, "send_welcome", send_welcome)
+
+    await language_handler.language_callback(callback, session, bot)
+
+    message.edit_reply_markup.assert_awaited_once_with(reply_markup=None)
+    message.edit_text.assert_awaited_once()
+    assert "reply_markup" not in message.edit_text.await_args.kwargs
+    send_welcome.assert_awaited_once_with(message, session, bot, language)
 
 
 def test_supported_language_outputs():
