@@ -19,7 +19,7 @@ SCALES = (
 )
 NUMBER_RE = re.compile(r"^[+-]?(?:(?:\d{1,3}(?:,\d{3})+)|\d+)(?:\.\d+)?$")
 SUPPORTED_LANGUAGE_CODES = frozenset({
-    "en", "bn", "zh", "my", "am", "am_latn", "om", "es", "fr", "ru", "ar",
+    "en", "bn", "zh", "my", "am", "am_latn", "si", "ta", "om", "es", "fr", "ru", "ar",
 })
 
 
@@ -533,11 +533,91 @@ def _bengali_integer(number: int) -> str:
     return " ".join(parts)
 
 
+def _sinhala_under_thousand(number: int) -> str:
+    ones = ("බිංදුව", "එක", "දෙක", "තුන", "හතර", "පහ", "හය", "හත", "අට", "නවය")
+    teens = ("දහය", "එකොළහ", "දොළහ", "දහතුන", "දහහතර", "පහළොව", "දහසය", "දහහත", "දහඅට", "දහනවය")
+    tens = ("", "", "විස්ස", "තිහ", "හතළිහ", "පනහ", "හැට", "හැත්තෑව", "අසූව", "අනූව")
+    tens_stems = ("", "", "විසි", "තිස්", "හතළිස්", "පනස්", "හැට", "හැත්තෑ", "අසූ", "අනූ")
+    hundreds = ("", "සියය", "දෙසිය", "තුන්සිය", "හාරසිය", "පන්සිය", "හයසිය", "හත්සිය", "අටසිය", "නවසිය")
+    hundred_stems = ("", "එකසිය", "දෙසිය", "තුන්සිය", "හාරසිය", "පන්සිය", "හයසිය", "හත්සිය", "අටසිය", "නවසිය")
+    if number < 10:
+        return ones[number]
+    if number < 20:
+        return teens[number - 10]
+    if number < 100:
+        ten, one = divmod(number, 10)
+        return tens[ten] if one == 0 else f"{tens_stems[ten]} {_sinhala_under_thousand(one)}"
+    hundred, remainder = divmod(number, 100)
+    prefix = hundreds[hundred] if remainder == 0 else hundred_stems[hundred]
+    return prefix if remainder == 0 else f"{prefix} {_sinhala_under_thousand(remainder)}"
+
+
+def _sinhala_integer(number: int) -> str:
+    if number == 0:
+        return "බිංදුව"
+    if number < 0:
+        return f"ඍණ {_sinhala_integer(-number)}"
+    parts: list[str] = []
+    remainder = number
+    for unit, name in ((10**7, "කෝටි"), (10**5, "ලක්ෂ"), (10**3, "දහස්")):
+        if remainder >= unit:
+            quotient, remainder = divmod(remainder, unit)
+            prefix = "එක්" if quotient == 1 else _sinhala_integer(quotient)
+            parts.append(f"{prefix} {name}")
+    if remainder:
+        parts.append(_sinhala_under_thousand(remainder))
+    return " ".join(parts)
+
+
+def _tamil_under_thousand(number: int) -> str:
+    ones = ("சுழியம்", "ஒன்று", "இரண்டு", "மூன்று", "நான்கு", "ஐந்து", "ஆறு", "ஏழு", "எட்டு", "ஒன்பது")
+    teens = ("பத்து", "பதினொன்று", "பன்னிரண்டு", "பதின்மூன்று", "பதினான்கு", "பதினைந்து", "பதினாறு", "பதினேழு", "பதினெட்டு", "பத்தொன்பது")
+    tens = ("", "", "இருபது", "முப்பது", "நாற்பது", "ஐம்பது", "அறுபது", "எழுபது", "எண்பது", "தொண்ணூறு")
+    tens_stems = ("", "", "இருபத்து", "முப்பத்து", "நாற்பத்து", "ஐம்பத்து", "அறுபத்து", "எழுபத்து", "எண்பத்து", "தொண்ணூற்று")
+    hundreds = ("", "நூறு", "இருநூறு", "முந்நூறு", "நானூறு", "ஐந்நூறு", "அறுநூறு", "எழுநூறு", "எண்ணூறு", "தொள்ளாயிரம்")
+    hundred_stems = ("", "நூற்று", "இருநூற்று", "முந்நூற்று", "நானூற்று", "ஐந்நூற்று", "அறுநூற்று", "எழுநூற்று", "எண்ணூற்று", "தொள்ளாயிரத்து")
+    if number < 10:
+        return ones[number]
+    if number < 20:
+        return teens[number - 10]
+    if number < 100:
+        ten, one = divmod(number, 10)
+        return tens[ten] if one == 0 else f"{tens_stems[ten]} {_tamil_under_thousand(one)}"
+    hundred, remainder = divmod(number, 100)
+    prefix = hundreds[hundred] if remainder == 0 else hundred_stems[hundred]
+    return prefix if remainder == 0 else f"{prefix} {_tamil_under_thousand(remainder)}"
+
+
+def _tamil_integer(number: int) -> str:
+    if number == 0:
+        return "சுழியம்"
+    if number < 0:
+        return f"எதிர்மறை {_tamil_integer(-number)}"
+    if number < 1000:
+        return _tamil_under_thousand(number)
+    parts: list[str] = []
+    remainder = number
+    for unit, name in ((10**7, "கோடி"), (10**5, "இலட்சம்"), (10**3, "ஆயிரம்")):
+        if remainder >= unit:
+            quotient, remainder = divmod(remainder, unit)
+            if quotient == 1:
+                parts.append("ஆயிரம்" if unit == 10**3 else f"ஒரு {name}")
+            else:
+                parts.append(f"{_tamil_integer(quotient)} {name}")
+    if remainder:
+        parts.append(_tamil_integer(remainder))
+    return " ".join(parts)
+
+
 def _integer_in_language(number: int, language: str) -> str:
     if language == "en":
         return integer_to_words(number)
     if language == "bn":
         return _bengali_integer(number)
+    if language == "si":
+        return _sinhala_integer(number)
+    if language == "ta":
+        return _tamil_integer(number)
     if language == "zh":
         return _chinese_integer(number)
     if language == "my":
@@ -608,6 +688,8 @@ def _decimal_digits(fractional: str, language: str) -> str:
     digit_names = {
         "en": ONES,
         "bn": _BENGALI_ONES,
+        "si": ("බිංදුව", "එක", "දෙක", "තුන", "හතර", "පහ", "හය", "හත", "අට", "නවය"),
+        "ta": ("சுழியம்", "ஒன்று", "இரண்டு", "மூன்று", "நான்கு", "ஐந்து", "ஆறு", "ஏழு", "எட்டு", "ஒன்பது"),
         "zh": tuple("零一二三四五六七八九"),
         "my": ("သုည", "တစ်", "နှစ်", "သုံး", "လေး", "ငါး", "ခြောက်", "ခုနစ်", "ရှစ်", "ကိုး"),
         "am": ("ዜሮ", "አንድ", "ሁለት", "ሶስት", "አራት", "አምስት", "ስድስት", "ሰባት", "ስምንት", "ዘጠኝ"),
@@ -624,15 +706,16 @@ def _decimal_digits(fractional: str, language: str) -> str:
 def number_to_words(value: str, language: str = "en") -> str:
     integer, fractional = _parse_number(value)
     language_aliases = {"am-latn": "am_latn", "am_latn": "am_latn"}
-    language = language_aliases.get(language.lower().replace("_", "-"), language)
+    normalized_language = language.lower().replace("_", "-")
+    language = language_aliases.get(normalized_language, normalized_language)
     language = language if language in SUPPORTED_LANGUAGE_CODES else "en"
     if fractional is None:
         result = _integer_in_language(integer, language)
         return result
     negative = integer < 0
     magnitude = _integer_in_language(abs(integer), language)
-    prefixes = {"en": "Negative", "bn": "ঋণাত্মক", "zh": "负", "my": "အနုတ်", "am": "አሉታዊ", "am_latn": "alutawi", "om": "negatiivii", "es": "menos", "fr": "moins", "ru": "минус", "ar": "سالب"}
-    separators = {"en": "point", "bn": "দশমিক", "zh": "点", "my": "ဒသမ", "am": "ነጥብ", "am_latn": "netib", "om": "tuqaa", "es": "coma", "fr": "virgule", "ru": "целых", "ar": "فاصلة"}
+    prefixes = {"en": "Negative", "bn": "ঋণাত্মক", "zh": "负", "my": "အနုတ်", "am": "አሉታዊ", "am_latn": "alutawi", "si": "ඍණ", "ta": "எதிர்மறை", "om": "negatiivii", "es": "menos", "fr": "moins", "ru": "минус", "ar": "سالب"}
+    separators = {"en": "point", "bn": "দশমিক", "zh": "点", "my": "ဒသမ", "am": "ነጥብ", "am_latn": "netib", "si": "දශම", "ta": "புள்ளி", "om": "tuqaa", "es": "coma", "fr": "virgule", "ru": "целых", "ar": "فاصلة"}
     prefix = f"{prefixes[language]} " if negative else ""
     return f"{prefix}{magnitude} {separators[language]} {_decimal_digits(fractional, language)}"
 

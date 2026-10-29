@@ -29,6 +29,20 @@ def test_large_integer():
     assert integer_to_words(10**21) == "One sextillion"
 
 
+def test_sinhala_number_forms():
+    assert number_to_words("0", "si") == "බිංදුව"
+    assert number_to_words("21", "si") == "විසි එක"
+    assert number_to_words("10482", "si") == "දහය දහස් හාරසිය අසූ දෙක"
+    assert number_to_words("-10.25", "si") == "ඍණ දහය දශම දෙක පහ"
+
+
+def test_tamil_number_forms():
+    assert number_to_words("0", "ta") == "சுழியம்"
+    assert number_to_words("21", "ta") == "இருபத்து ஒன்று"
+    assert number_to_words("10482", "ta") == "பத்து ஆயிரம் நானூற்று எண்பத்து இரண்டு"
+    assert number_to_words("-10.25", "ta") == "எதிர்மறை பத்து புள்ளி இரண்டு ஐந்து"
+
+
 def test_bengali_number_forms():
     assert number_to_words("21", "bn") == "একুশ"
     assert number_to_words("10482", "bn") == "দশ হাজার চারশ বিরাশি"

@@ -39,6 +39,8 @@ def test_supported_language_outputs():
         "my": "တစ်သောင်း လေးရာ ရှစ်ဆယ့်နှစ်",
         "am": "አስር ሺህ አራት መቶ ሰማንያ ሁለት",
         "am_latn": "asir shih arat meto semanya hulet",
+        "si": "දහය දහස් හාරසිය අසූ දෙක",
+        "ta": "பத்து ஆயிரம் நானூற்று எண்பத்து இரண்டு",
         "om": "kudhan kuma fi afur dhibba fi saddeetama fi lama",
         "es": "diez mil cuatrocientos ochenta y dos",
         "fr": "dix mille quatre cent quatre-vingt-deux",
@@ -54,11 +56,17 @@ def test_language_normalization_and_localized_messages():
     assert normalize_language("bn-BD") == "bn"
     assert normalize_language("am-Latn") == "am_latn"
     assert normalize_language("am_latn") == "am_latn"
+    assert normalize_language("si-LK") == "si"
+    assert normalize_language("ta-IN") == "ta"
     assert normalize_language("unknown") == "en"
     assert "10482" in text("invalid_number", "my")
     assert text("loading", "my") != text("loading", "en")
     assert text("loading", "bn") != text("loading", "en")
     assert "Tiqurwon" in text("loading", "am-Latn")
+    assert text("loading", "si") != text("loading", "en")
+    assert text("loading", "ta") != text("loading", "en")
+    assert any(language.code == "si" and language.label == "Sinhala (සිංහල)" for language in LANGUAGES)
+    assert any(language.code == "ta" and language.label == "Tamil (தமிழ்)" for language in LANGUAGES)
 
 
 def test_custom_language_messages_localize_and_remove_default_symbol():

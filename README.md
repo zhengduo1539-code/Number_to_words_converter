@@ -11,7 +11,7 @@ It includes MongoDB persistence, an admin panel, customizable welcome content an
 ## Features
 
 - Integers, comma-separated numbers, negatives, decimals, and arbitrary-precision values.
-- `/lang` language selector with American English as the default and Bengali/Bangla, Simplified Chinese, Myanmar, Amharic, Amharic (Latin), Afaan Oromo, Spanish, French, Russian, and Arabic output.
+- `/lang` language selector with American English as the default and Bengali/Bangla, Simplified Chinese, Myanmar, Amharic, Amharic (Latin), Sinhala, Tamil, Afaan Oromo, Spanish, French, Russian, and Arabic output.
 - A localized `Request Language` button that sends user language requests to all configured administrators.
 - A configurable loading message shown briefly before each valid number conversion, with Telegram custom-emoji support.
 - `/start` welcome flow with a dynamically generated Share Bot URL.
@@ -32,6 +32,8 @@ The general Telegram command menu contains `/start` and `/lang`. Press `/lang` a
 - Myanmar
 - Amharic
 - Amharic (Latin)
+- Sinhala (සිංහල)
+- Tamil (தமிழ்)
 - Afaan Oromo
 - Spanish
 - French
