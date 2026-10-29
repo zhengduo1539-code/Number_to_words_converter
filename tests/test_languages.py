@@ -71,10 +71,10 @@ def test_language_button_customization_menu_covers_every_language():
         if button.callback_data and button.callback_data.startswith("ctm:language_button:")
     }
 
-    assert set(language_buttons) == {
-        *(f"ctm:language_button:{language.code}" for language in LANGUAGES),
-        "ctm:language_button:request_language",
-    }
+    expected_callbacks = {
+        f"ctm:language_button:{language.code}" for language in LANGUAGES
+    } | {"ctm:language_button:request_language"}
+    assert set(language_buttons) == expected_callbacks
     assert language_buttons["ctm:language_button:si"].text.startswith("✅ ")
     assert not language_buttons["ctm:language_button:ta"].text.startswith("✅ ")
     assert language_buttons["ctm:language_button:request_language"].text == "🌐 Request Language"
@@ -91,6 +91,24 @@ def test_request_language_button_is_localized():
     ][0]
     assert request_button.text == "🌐 طلب لغة"
     assert request_button.icon_custom_emoji_id is None
+
+
+def test_request_language_button_customization_menu_shows_icon_status():
+    default_markup = language_selection_buttons_markup({})
+    configured_markup = language_selection_buttons_markup(
+        {"request_language": "custom-request-language-emoji"}
+    )
+
+    def request_button(markup):
+        return next(
+            button
+            for row in markup.inline_keyboard
+            for button in row
+            if button.callback_data == "ctm:language_button:request_language"
+        )
+
+    assert request_button(default_markup).text == "🌐 Request Language"
+    assert request_button(configured_markup).text == "✅ 🌐 Request Language"
 
 
 def test_request_language_button_uses_custom_emoji_and_hides_default_symbol():
