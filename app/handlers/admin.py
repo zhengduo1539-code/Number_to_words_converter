@@ -164,7 +164,8 @@ def rich_layout_menu_text(layout: dict, customized: bool) -> str:
         f"Example: {sample('example')}\n"
         f"Footer: {sample('footer')}\n\n"
         "Edit a section, change the display switches, or preview before testing with /start. "
-        "The saved original Welcome Message and buttons are kept separately."
+        "The saved original Welcome Message and buttons are kept separately. "
+        "Edited section text is used for English; other languages keep their localized copy, with the display switches applied."
     )
 
 
