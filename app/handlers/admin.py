@@ -17,6 +17,7 @@ from app.db.repository import (
     create_broadcast,
     find_recipients,
     get_admin_button,
+    get_language_button_icons,
     get_setting,
     get_welcome_button,
     increment_conversion,
@@ -30,6 +31,7 @@ from app.db.repository import (
     reset_loading_message,
     reset_welcome_buttons,
     reset_welcome_message,
+    set_language_button_icons,
     set_setting,
     stats,
     update_broadcast,
@@ -42,6 +44,7 @@ from app.keyboards.customization import (
     cancel_markup,
     customization_markup,
     language_messages_markup,
+    language_selection_buttons_markup,
     loading_message_markup,
     reset_all_markup,
     style_markup,
@@ -57,12 +60,14 @@ from app.services.emoji_service import (
     serialize_entities,
 )
 from app.services.i18n import (
+    LANGUAGE_BY_CODE,
     without_default_language_decoration,
     without_default_welcome_decoration,
 )
 from app.states.workflows import (
     AdminButtonStates,
     BroadcastStates,
+    LanguageButtonStates,
     LanguageMessageStates,
     LoadingMessageStates,
     WelcomeButtonStates,
@@ -184,6 +189,45 @@ async def customization_callbacks(callback: CallbackQuery, settings: Settings, s
     elif action == "welcome_reset":
         await reset_welcome_message(session)
         await edit_or_answer(callback, "Welcome message reset to default.", welcome_message_markup())
+    elif action == "language_buttons":
+        await state.clear()
+        icon_ids = await get_language_button_icons(session)
+        await edit_or_answer(
+            callback,
+            "🌐 Language Selection Buttons\n\n"
+            "Choose a language to customize its button icon. Send a Telegram custom/animated emoji in the next step. "
+            "Use /skip to remove an icon.\n\n"
+            "✅ indicates that a custom icon is already configured.",
+            language_selection_buttons_markup(icon_ids),
+        )
+    elif action == "language_button":
+        language_code = parts[2] if len(parts) > 2 else ""
+        language = LANGUAGE_BY_CODE.get(language_code)
+        if not language:
+            await edit_or_answer(
+                callback,
+                "Unsupported language.",
+                language_selection_buttons_markup(await get_language_button_icons(session)),
+            )
+            return
+        await state.clear()
+        await state.update_data(language_code=language_code)
+        await state.set_state(LanguageButtonStates.waiting_icon)
+        await edit_or_answer(
+            callback,
+            f"Send one Telegram custom emoji for the {language.label} button. "
+            "Its icon will appear before the language label.\n\n"
+            "Send /skip to remove the current custom icon.",
+            cancel_markup(callback_data="ctm:language_buttons"),
+        )
+    elif action == "language_buttons_reset":
+        await state.clear()
+        await set_language_button_icons(session, {})
+        await edit_or_answer(
+            callback,
+            "All language-selection custom emoji icons have been reset.",
+            language_selection_buttons_markup({}),
+        )
     elif action == "language_messages":
         menu_status = "Customized" if await get_setting(session, "language_menu_text") else "Default"
         changed_status = "Customized" if await get_setting(session, "language_changed_text") else "Default"
@@ -294,6 +338,7 @@ async def customization_callbacks(callback: CallbackQuery, settings: Settings, s
     elif action == "reset_confirm":
         await reset_welcome_message(session)
         await reset_language_messages(session)
+        await set_language_button_icons(session, {})
         await reset_loading_message(session)
         await reset_welcome_buttons(session)
         await reset_admin_buttons(session)
@@ -426,6 +471,45 @@ async def save_loading_message(message: Message, state: FSMContext, session) -> 
             preview_text,
         )
     await message.answer(preview_text, entities=preview_entities or None)
+
+
+@router.message(LanguageButtonStates.waiting_icon)
+async def language_button_icon(message: Message, state: FSMContext, session) -> None:
+    data = await state.get_data()
+    language_code = data.get("language_code")
+    language = LANGUAGE_BY_CODE.get(language_code)
+    if not language:
+        await state.clear()
+        await message.answer("The selected language is unavailable. Open /ctm and try again.")
+        return
+
+    icon_ids = await get_language_button_icons(session)
+    if (message.text or "").strip() == "/skip":
+        icon_ids.pop(language_code, None)
+        await set_language_button_icons(session, icon_ids)
+        await state.clear()
+        await message.answer(
+            f"Custom icon removed from {language.label}. Use /lang to preview the language buttons.",
+            reply_markup=language_selection_buttons_markup(icon_ids),
+        )
+        return
+
+    emoji_id = first_custom_emoji_id(message.entities)
+    if not emoji_id:
+        await message.answer(
+            "I couldn't detect a Telegram custom emoji in that message. Send an animated/custom emoji, "
+            "or send /skip to remove the current icon.",
+            reply_markup=cancel_markup(callback_data="ctm:language_buttons"),
+        )
+        return
+
+    icon_ids[language_code] = emoji_id
+    await set_language_button_icons(session, icon_ids)
+    await state.clear()
+    await message.answer(
+        f"Custom emoji icon saved for {language.label}. Use /lang to preview the language-selection buttons.",
+        reply_markup=language_selection_buttons_markup(icon_ids),
+    )
 
 
 @router.message(WelcomeButtonStates.waiting_label)
