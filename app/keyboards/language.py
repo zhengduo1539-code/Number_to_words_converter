@@ -36,7 +36,7 @@ def language_markup(
     request_language_icon_id = icon_ids.get("request_language")
     request_language_label = text("request_language_button", locale)
     if request_language_icon_id:
-        request_language_label = re.sub(r"^🌐\\s+", "", request_language_label, count=1)
+        request_language_label = request_language_label.removeprefix("🌐 ")
     rows.append([
         compatible_button(
             request_language_label,
