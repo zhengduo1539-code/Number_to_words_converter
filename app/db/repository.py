@@ -199,6 +199,9 @@ async def reset_admin_buttons(session: MongoSession) -> None:
 async def reset_welcome_message(session: MongoSession) -> None:
     await set_setting(session, "welcome_text", DEFAULT_WELCOME)
     await set_setting(session, "welcome_entities", "[]")
+    # Rich layout is separate from the stored message and must be re-derived
+    # when the underlying welcome text is reset.
+    await set_setting(session, "welcome_rich_layout", "")
 
 
 async def reset_language_messages(session: MongoSession) -> None:
