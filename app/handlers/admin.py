@@ -583,6 +583,15 @@ async def save_rich_welcome_field(message: Message, state: FSMContext, session) 
     layout, _ = await get_rich_layout_for_editor(session)
     layout[field] = value
     layout[f"{field}_entities"] = serialize_entities(saved_entities)
+    # Making an optional section non-empty should make it visible immediately.
+    if field == "heading":
+        layout["show_heading"] = bool(value.strip())
+    elif field in {"example_heading", "example"}:
+        layout["show_example"] = bool(
+            layout.get("example_heading", "").strip() or layout.get("example", "").strip()
+        )
+    elif field == "footer":
+        layout["show_footer"] = bool(value.strip())
     if rich_layout_has_unsupported_entities(layout):
         await message.answer(
             "The existing Welcome Message contains formatting that this editor cannot safely preserve. "
