@@ -231,7 +231,7 @@ def test_custom_request_sent_confirmation_removes_default_checkmark_for_translat
     custom = "✅ Thanks, we received your request."
     localized = localized_custom_language_text("request_language_sent", "my", custom)
     assert not localized.startswith("✅ ")
-    assert localized == text("request_language_sent", "my")
+    assert localized == text("request_language_sent", "my").removeprefix("✅ ")
 
 
 def test_share_button_falls_back_to_english_for_sinhala_and_tamil():
