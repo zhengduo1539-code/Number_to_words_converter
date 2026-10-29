@@ -10,6 +10,10 @@ class LanguageMessageStates(StatesGroup):
     waiting_changed = State()
 
 
+class LanguageButtonStates(StatesGroup):
+    waiting_icon = State()
+
+
 class LoadingMessageStates(StatesGroup):
     waiting_text = State()
 

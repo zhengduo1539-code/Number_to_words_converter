@@ -3,6 +3,7 @@ from __future__ import annotations
 from aiogram.types import InlineKeyboardMarkup
 
 from app.db.models import AdminButton, WelcomeButton
+from app.services.i18n import LANGUAGES
 from app.keyboards.buttons import compatible_button, button_text
 
 
@@ -10,6 +11,7 @@ def customization_markup() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [compatible_button("📝 Welcome Message", callback_data="ctm:welcome", style="primary")],
         [compatible_button("🌐 Language Messages", callback_data="ctm:language_messages", style="primary")],
+        [compatible_button("🌐 Language Selection Buttons", callback_data="ctm:language_buttons", style="primary")],
         [compatible_button("⏳ Loading Message", callback_data="ctm:loading_message", style="primary")],
         [compatible_button("🔘 Welcome Buttons", callback_data="ctm:welcome_buttons", style="primary")],
         [compatible_button("🛠 Admin Panel Buttons", callback_data="ctm:admin_buttons", style="primary")],
@@ -100,3 +102,25 @@ def cancel_markup(callback_data: str = "ctm:cancel") -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [compatible_button("✖️ Cancel", callback_data=callback_data, style="danger")],
     ])
+
+
+
+def language_selection_buttons_markup(icon_ids: dict[str, str]) -> InlineKeyboardMarkup:
+    rows = []
+    for index in range(0, len(LANGUAGES), 2):
+        row = []
+        for item in LANGUAGES[index:index + 2]:
+            label = f"✅ {item.menu_label}" if icon_ids.get(item.code) else item.menu_label
+            row.append(
+                compatible_button(
+                    label,
+                    callback_data=f"ctm:language_button:{item.code}",
+                    style="primary",
+                )
+            )
+        rows.append(row)
+    rows.extend([
+        [compatible_button("♻️ Reset All Icons", callback_data="ctm:language_buttons_reset", style="danger")],
+        [compatible_button("⬅️ Back", callback_data="ctm:home", style="primary")],
+    ])
+    return InlineKeyboardMarkup(inline_keyboard=rows)

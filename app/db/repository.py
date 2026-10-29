@@ -45,6 +45,43 @@ async def set_setting(session: MongoSession, key: str, value: str) -> None:
         await session.add(BotSetting(id=await session.next_id("bot_settings"), key=key, value=value, updated_at=now))
 
 
+async def get_language_button_icons(session: MongoSession) -> dict[str, str]:
+    """Return custom emoji icon IDs configured for language-selection buttons."""
+    raw_value = await get_setting(session, "language_button_icons", "{}")
+    try:
+        parsed = json.loads(raw_value)
+    except (TypeError, ValueError):
+        return {}
+    if not isinstance(parsed, dict):
+        return {}
+    return {
+        str(language_code): str(emoji_id)
+        for language_code, emoji_id in parsed.items()
+        if isinstance(language_code, str)
+        and isinstance(emoji_id, str)
+        and emoji_id.strip()
+    }
+
+
+async def set_language_button_icons(
+    session: MongoSession,
+    icon_ids: dict[str, str],
+) -> None:
+    """Persist the language-selection custom emoji icon mapping."""
+    cleaned = {
+        str(language_code): str(emoji_id)
+        for language_code, emoji_id in icon_ids.items()
+        if isinstance(language_code, str)
+        and isinstance(emoji_id, str)
+        and emoji_id.strip()
+    }
+    await set_setting(
+        session,
+        "language_button_icons",
+        json.dumps(cleaned, ensure_ascii=False),
+    )
+
+
 async def initialize_defaults(session: MongoSession) -> None:
     if await session.database.bot_settings.count_documents({"key": "welcome_text"}) == 0:
         await set_setting(session, "welcome_text", DEFAULT_WELCOME)

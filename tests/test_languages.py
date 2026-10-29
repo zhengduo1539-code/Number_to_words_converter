@@ -6,6 +6,7 @@ import pytest
 from app.db.models import WelcomeButton
 from app.handlers import language as language_handler
 from app.keyboards.buttons import welcome_markup
+from app.keyboards.customization import language_selection_buttons_markup
 from app.keyboards.language import language_markup
 from app.services.i18n import (
     LANGUAGES,
@@ -26,6 +27,40 @@ def test_all_language_buttons_use_success_style():
     assert {button.style for button in language_buttons} == {"success"}
     assert len(request_buttons) == 1
     assert request_buttons[0].style == "primary"
+
+
+def test_language_markup_applies_per_language_custom_emoji_icons():
+    custom_icons = {"si": "custom-emoji-si", "ta": "custom-emoji-ta"}
+    markup = language_markup("en", custom_icons)
+    buttons = {
+        button.callback_data: button
+        for row in markup.inline_keyboard
+        for button in row
+        if button.callback_data and button.callback_data.startswith("lang:")
+    }
+
+    assert buttons["lang:si"].icon_custom_emoji_id == "custom-emoji-si"
+    assert buttons["lang:ta"].icon_custom_emoji_id == "custom-emoji-ta"
+    assert buttons["lang:en"].icon_custom_emoji_id is None
+    assert len(buttons) == len(LANGUAGES)
+
+
+def test_language_button_customization_menu_covers_every_language():
+    custom_icons = {"si": "custom-emoji-si"}
+    markup = language_selection_buttons_markup(custom_icons)
+    buttons = [button for row in markup.inline_keyboard for button in row]
+    language_buttons = {
+        button.callback_data: button
+        for button in buttons
+        if button.callback_data and button.callback_data.startswith("ctm:language_button:")
+    }
+
+    assert set(language_buttons) == {
+        f"ctm:language_button:{language.code}" for language in LANGUAGES
+    }
+    assert language_buttons["ctm:language_button:si"].text.startswith("✅ ")
+    assert not language_buttons["ctm:language_button:ta"].text.startswith("✅ ")
+    assert any(button.callback_data == "ctm:language_buttons_reset" for button in buttons)
 
 
 def test_request_language_button_is_localized():
