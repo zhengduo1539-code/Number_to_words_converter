@@ -1,5 +1,3 @@
-import json
-
 from aiogram.types import MessageEntity
 
 from app.db.repository import DEFAULT_WELCOME
