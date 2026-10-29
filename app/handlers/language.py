@@ -11,7 +11,11 @@ from aiogram.types import CallbackQuery, Message
 from app.config import Settings
 from app.db.repository import get_language_button_icons, get_setting, set_user_language
 from app.keyboards.language import language_markup
-from app.services.emoji_service import deserialize_entities, localize_custom_emoji_entities
+from app.services.emoji_service import (
+    deserialize_entities,
+    localize_custom_emoji_entities,
+    remove_custom_emoji_text,
+)
 from app.services.i18n import (
     LANGUAGE_BY_CODE,
     language_name,
@@ -24,6 +28,29 @@ from app.states.workflows import RequestLanguageStates
 
 router = Router(name="language")
 logger = logging.getLogger(__name__)
+
+
+async def _request_language_message(session, key: str, locale: str) -> tuple[str, list]:
+    """Render a customizable request-language message while preserving animated emoji entities."""
+    custom_text = await get_setting(session, f"{key}_text")
+    if not custom_text:
+        return text(key, locale), []
+
+    entities = deserialize_entities(
+        await get_setting(session, f"{key}_entities", "[]")
+    )
+    # Remove Telegram's visible custom-emoji placeholders before reinserting their entities.
+    text_without_custom_emoji = remove_custom_emoji_text(custom_text, entities)
+    localized_text = localized_custom_language_text(
+        key,
+        locale,
+        text_without_custom_emoji,
+    )
+    return localize_custom_emoji_entities(
+        custom_text,
+        entities,
+        localized_text,
+    )
 
 
 @router.message(Command("lang"))
@@ -70,7 +97,12 @@ async def request_language_callback(
     language = normalize_language(await _current_language(session, callback.from_user.id))
     await state.set_state(RequestLanguageStates.waiting_text)
     await callback.answer()
-    await callback.message.answer(text("request_language_prompt", language))
+    prompt_text, entities = await _request_language_message(
+        session,
+        "request_language_prompt",
+        language,
+    )
+    await callback.message.answer(prompt_text, entities=entities or None)
 
 
 @router.callback_query(F.data.startswith("lang:"))
@@ -145,7 +177,15 @@ async def request_language_message(
 
     await state.clear()
     result_key = "request_language_sent" if delivered else "request_language_failed"
-    await message.answer(text(result_key, language))
+    if delivered:
+        result_text, entities = await _request_language_message(
+            session,
+            "request_language_sent",
+            language,
+        )
+    else:
+        result_text, entities = text(result_key, language), []
+    await message.answer(result_text, entities=entities or None)
 
 
 async def _current_language(session, telegram_user_id: int) -> str:
