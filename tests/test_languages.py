@@ -148,6 +148,33 @@ async def test_request_language_custom_messages_are_used_for_english(
         bot.send_message.assert_awaited_once()
 
 
+async def test_custom_request_language_message_preserves_animated_emoji_entity(monkeypatch):
+    custom_text = "🙂 Tell us the language."
+    serialized_entities = (
+        '[{"type":"custom_emoji","offset":0,"length":2,"custom_emoji_id":"custom-emoji-id"}]'
+    )
+
+    async def get_setting(_session, key, default=""):
+        if key == "request_language_prompt_text":
+            return custom_text
+        if key == "request_language_prompt_entities":
+            return serialized_entities
+        return default
+
+    monkeypatch.setattr(language_handler, "get_setting", get_setting)
+    rendered_text, entities = await language_handler._request_language_message(
+        object(),
+        "request_language_prompt",
+        "en",
+    )
+
+    assert rendered_text == custom_text
+    assert len(entities) == 1
+    assert entities[0].type == "custom_emoji"
+    assert entities[0].offset == 0
+    assert entities[0].length == 2
+
+
 def test_custom_request_sent_confirmation_removes_default_checkmark_for_translations():
     from app.services.i18n import localized_custom_language_text
 
