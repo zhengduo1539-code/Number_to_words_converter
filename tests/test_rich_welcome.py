@@ -32,12 +32,12 @@ def test_default_welcome_rich_html_preserves_localized_copy(language):
         assert escape(value) in rich_html
 
 
-def _welcome_mocks(monkeypatch, welcome_text):
+def _welcome_mocks(monkeypatch, welcome_text, entities_json="[]"):
     async def fake_get_setting(_session, key, default=""):
         if key == "welcome_text":
             return welcome_text
         if key == "welcome_entities":
-            return "[]"
+            return entities_json
         return default
 
     monkeypatch.setattr(start_handler, "get_setting", fake_get_setting)
@@ -71,7 +71,7 @@ async def test_default_welcome_uses_rich_message_and_keeps_inline_buttons(monkey
     assert len(kwargs["reply_markup"].inline_keyboard) == 1
 
 
-async def test_custom_welcome_keeps_existing_legacy_rendering(monkeypatch):
+async def test_custom_welcome_uses_rich_paragraphs_and_keeps_inline_buttons(monkeypatch):
     custom_text = "✨ My custom welcome\n\nKeep the current layout unchanged."
     message = _welcome_mocks(monkeypatch, custom_text)
     bot = SimpleNamespace(
@@ -81,12 +81,36 @@ async def test_custom_welcome_keeps_existing_legacy_rendering(monkeypatch):
 
     await start_handler.send_welcome(message, object(), bot, "en")
 
-    bot.send_rich_message.assert_not_awaited()
-    message.answer.assert_awaited_once()
-    args = message.answer.await_args.kwargs
-    assert args["entities"] is None
-    assert "✨ My custom welcome" in message.answer.await_args.args[0]
-    assert args["reply_markup"] is not None
+    bot.send_rich_message.assert_awaited_once()
+    message.answer.assert_not_awaited()
+    html = bot.send_rich_message.await_args.kwargs["rich_message"].html
+    assert "<p>✨ My custom welcome</p>" in html
+    assert "<p>Keep the current layout unchanged.</p>" in html
+    assert bot.send_rich_message.await_args.kwargs["reply_markup"] is not None
+
+
+async def test_custom_welcome_preserves_animated_emoji_entities(monkeypatch):
+    import json
+
+    custom_text = "🙂 My custom welcome\n\nKeep this line."
+    entities = json.dumps([{
+        "type": "custom_emoji",
+        "offset": 0,
+        "length": 2,
+        "custom_emoji_id": "custom-emoji-id",
+    }])
+    message = _welcome_mocks(monkeypatch, custom_text, entities)
+    bot = SimpleNamespace(
+        get_me=AsyncMock(return_value=SimpleNamespace(username="numbers_bot")),
+        send_rich_message=AsyncMock(return_value=object()),
+    )
+
+    await start_handler.send_welcome(message, object(), bot, "en")
+
+    html = bot.send_rich_message.await_args.kwargs["rich_message"].html
+    assert '<tg-emoji emoji-id="custom-emoji-id">🙂</tg-emoji>' in html
+    assert "<p>Keep this line.</p>" in html
+    message.answer.assert_not_awaited()
 
 
 async def test_rejected_rich_welcome_falls_back_to_regular_message(monkeypatch):
