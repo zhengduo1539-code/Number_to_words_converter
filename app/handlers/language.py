@@ -84,10 +84,11 @@ async def language_callback(callback: CallbackQuery, session, bot) -> None:
     else:
         changed_text = text("language_changed", code, language=language_name(code))
         entities = []
+    # Remove the language choices after selection to keep the chat uncluttered.
+    await callback.message.edit_reply_markup(reply_markup=None)
     await callback.message.edit_text(
         changed_text,
         entities=entities or None,
-        reply_markup=language_markup(code),
     )
     await send_welcome(callback.message, session, bot, code)
 
