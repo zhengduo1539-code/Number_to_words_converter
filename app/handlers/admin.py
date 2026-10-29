@@ -231,9 +231,15 @@ async def customization_callbacks(callback: CallbackQuery, settings: Settings, s
     elif action == "language_messages":
         menu_status = "Customized" if await get_setting(session, "language_menu_text") else "Default"
         changed_status = "Customized" if await get_setting(session, "language_changed_text") else "Default"
+        request_prompt_status = "Customized" if await get_setting(session, "request_language_prompt_text") else "Default"
+        request_sent_status = "Customized" if await get_setting(session, "request_language_sent_text") else "Default"
         await edit_or_answer(
             callback,
-            f"🌐 Language Messages\n\nChoose your language: {menu_status}\nLanguage changed: {changed_status}",
+            f"🌐 Language Messages\n\n"
+            f"Choose your language: {menu_status}\n"
+            f"Language changed: {changed_status}\n"
+            f"Request Language prompt: {request_prompt_status}\n"
+            f"Request sent confirmation: {request_sent_status}",
             language_messages_markup(),
         )
     elif action == "loading_message":
@@ -275,6 +281,28 @@ async def customization_callbacks(callback: CallbackQuery, settings: Settings, s
         await set_setting(session, "language_changed_text", "")
         await set_setting(session, "language_changed_entities", "[]")
         await edit_or_answer(callback, "Language-changed message reset to default.", language_messages_markup())
+    elif action == "request_language_prompt_edit":
+        await state.set_state(LanguageMessageStates.waiting_request_prompt)
+        await edit_or_answer(
+            callback,
+            "Send the custom Request Language prompt. Telegram custom/animated emojis are supported; the message remains localized for other bot languages.",
+            cancel_markup(),
+        )
+    elif action == "request_language_prompt_reset":
+        await set_setting(session, "request_language_prompt_text", "")
+        await set_setting(session, "request_language_prompt_entities", "[]")
+        await edit_or_answer(callback, "Request Language prompt reset to default.", language_messages_markup())
+    elif action == "request_language_sent_edit":
+        await state.set_state(LanguageMessageStates.waiting_request_sent)
+        await edit_or_answer(
+            callback,
+            "Send the custom request-submitted confirmation. Telegram custom/animated emojis are supported; the message remains localized for other bot languages.",
+            cancel_markup(),
+        )
+    elif action == "request_language_sent_reset":
+        await set_setting(session, "request_language_sent_text", "")
+        await set_setting(session, "request_language_sent_entities", "[]")
+        await edit_or_answer(callback, "Request-submitted confirmation reset to default.", language_messages_markup())
     elif action == "welcome_buttons":
         await edit_or_answer(callback, "🔘 Welcome Buttons", welcome_buttons_markup(await list_welcome_buttons(session)))
     elif action == "wb_add":
@@ -409,11 +437,18 @@ async def save_language_message(message: Message, state: FSMContext, session, ke
     await set_setting(session, entity_key, serialize_entities(message.entities))
     await state.clear()
     await message.answer(f"{label} saved.", reply_markup=language_messages_markup())
-    preview_text = without_default_language_decoration(
-        "language_menu" if key == "language_menu_text" else "language_changed",
-        message.text,
-    )
+    message_type = {
+        "language_menu_text": "language_menu",
+        "language_changed_text": "language_changed",
+        "request_language_prompt_text": "request_language_prompt",
+        "request_language_sent_text": "request_language_sent",
+    }[key]
     preview_entities = message.entities or []
+    text_without_custom_emoji = remove_custom_emoji_text(message.text, preview_entities)
+    preview_text = without_default_language_decoration(
+        message_type,
+        text_without_custom_emoji,
+    )
     if any(entity.type == "custom_emoji" and entity.custom_emoji_id for entity in preview_entities):
         preview_text, preview_entities = localize_custom_emoji_entities(
             message.text,
@@ -447,8 +482,32 @@ async def save_language_changed_message(message: Message, state: FSMContext, ses
     )
 
 
+@router.message(LanguageMessageStates.waiting_request_prompt)
+async def save_request_language_prompt_message(message: Message, state: FSMContext, session) -> None:
+    await save_language_message(
+        message,
+        state,
+        session,
+        "request_language_prompt_text",
+        "request_language_prompt_entities",
+        "Request Language prompt",
+    )
+
+
+@router.message(LanguageMessageStates.waiting_request_sent)
+async def save_request_language_sent_message(message: Message, state: FSMContext, session) -> None:
+    await save_language_message(
+        message,
+        state,
+        session,
+        "request_language_sent_text",
+        "request_language_sent_entities",
+        "Request-submitted confirmation",
+    )
+
+
 @router.message(LoadingMessageStates.waiting_text)
-async def save_loading_message(message: Message, state: FSMContext, session) -> None:
+async def save_loading_message(message: Message, state: FSMContext, session) -> None
     if not message.text or not message.text.strip():
         await message.answer(
             "Please send a text message, or press Cancel.",

@@ -8,6 +8,8 @@ class WelcomeMessageStates(StatesGroup):
 class LanguageMessageStates(StatesGroup):
     waiting_menu = State()
     waiting_changed = State()
+    waiting_request_prompt = State()
+    waiting_request_sent = State()
 
 
 class LanguageButtonStates(StatesGroup):

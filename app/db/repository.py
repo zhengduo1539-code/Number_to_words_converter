@@ -206,6 +206,10 @@ async def reset_language_messages(session: MongoSession) -> None:
     await set_setting(session, "language_menu_entities", "[]")
     await set_setting(session, "language_changed_text", "")
     await set_setting(session, "language_changed_entities", "[]")
+    await set_setting(session, "request_language_prompt_text", "")
+    await set_setting(session, "request_language_prompt_entities", "[]")
+    await set_setting(session, "request_language_sent_text", "")
+    await set_setting(session, "request_language_sent_entities", "[]")
 
 
 async def reset_loading_message(session: MongoSession) -> None:
