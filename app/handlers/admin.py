@@ -203,10 +203,14 @@ async def customization_callbacks(callback: CallbackQuery, settings: Settings, s
     elif action == "language_button":
         language_code = parts[2] if len(parts) > 2 else ""
         language = LANGUAGE_BY_CODE.get(language_code)
-        if not language:
+        if language_code == "request_language":
+            button_label = "Request Language"
+        elif language:
+            button_label = language.label
+        else:
             await edit_or_answer(
                 callback,
-                "Unsupported language.",
+                "Unsupported language button.",
                 language_selection_buttons_markup(await get_language_button_icons(session)),
             )
             return
@@ -215,8 +219,8 @@ async def customization_callbacks(callback: CallbackQuery, settings: Settings, s
         await state.set_state(LanguageButtonStates.waiting_icon)
         await edit_or_answer(
             callback,
-            f"Send one Telegram custom emoji for the {language.label} button. "
-            "Its icon will appear before the language label.\n\n"
+            f"Send one Telegram custom emoji for the {button_label} button. "
+            "Its icon will replace the default leading emoji when displayed.\n\n"
             "Send /skip to remove the current custom icon.",
             cancel_markup(callback_data="ctm:language_buttons"),
         )
@@ -537,9 +541,13 @@ async def language_button_icon(message: Message, state: FSMContext, session) -> 
     data = await state.get_data()
     language_code = data.get("language_code")
     language = LANGUAGE_BY_CODE.get(language_code)
-    if not language:
+    if language_code == "request_language":
+        button_label = "Request Language"
+    elif language:
+        button_label = language.label
+    else:
         await state.clear()
-        await message.answer("The selected language is unavailable. Open /ctm and try again.")
+        await message.answer("The selected language button is unavailable. Open /ctm and try again.")
         return
 
     icon_ids = await get_language_button_icons(session)
@@ -548,7 +556,7 @@ async def language_button_icon(message: Message, state: FSMContext, session) -> 
         await set_language_button_icons(session, icon_ids)
         await state.clear()
         await message.answer(
-            f"Custom icon removed from {language.label}. Use /lang to preview the language buttons.",
+            f"Custom icon removed from the {button_label} button. Use /lang to preview the language buttons.",
             reply_markup=language_selection_buttons_markup(icon_ids),
         )
         return
@@ -566,7 +574,7 @@ async def language_button_icon(message: Message, state: FSMContext, session) -> 
     await set_language_button_icons(session, icon_ids)
     await state.clear()
     await message.answer(
-        f"Custom emoji icon saved for {language.label}. Use /lang to preview the language-selection buttons.",
+        f"Custom emoji icon saved for the {button_label} button. Use /lang to preview the language-selection buttons.",
         reply_markup=language_selection_buttons_markup(icon_ids),
     )
 

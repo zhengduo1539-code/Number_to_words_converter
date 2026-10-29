@@ -122,6 +122,14 @@ def language_selection_buttons_markup(icon_ids: dict[str, str]) -> InlineKeyboar
                 )
             )
         rows.append(row)
+    request_label = "✅ 🌐 Request Language" if icon_ids.get("request_language") else "🌐 Request Language"
+    rows.append([
+        compatible_button(
+            request_label,
+            callback_data="ctm:language_button:request_language",
+            style="primary",
+        )
+    ])
     rows.extend([
         [compatible_button("♻️ Reset All Icons", callback_data="ctm:language_buttons_reset", style="danger")],
         [compatible_button("⬅️ Back", callback_data="ctm:home", style="primary")],

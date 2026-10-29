@@ -33,11 +33,16 @@ def language_markup(
                 )
             )
         rows.append(row)
+    request_language_icon_id = icon_ids.get("request_language")
+    request_language_label = text("request_language_button", locale)
+    if request_language_icon_id:
+        request_language_label = request_language_label.removeprefix("🌐 ")
     rows.append([
         compatible_button(
-            text("request_language_button", locale),
+            request_language_label,
             callback_data="request_language",
             style="primary",
+            icon_custom_emoji_id=request_language_icon_id,
         )
     ])
     return InlineKeyboardMarkup(inline_keyboard=rows)
