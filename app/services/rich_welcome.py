@@ -123,6 +123,15 @@ def parse_rich_layout(raw_value: str | None) -> dict[str, Any] | None:
     return layout
 
 
+def rich_layout_has_unsupported_entities(layout: dict[str, Any]) -> bool:
+    """True when an existing section has formatting the Rich editor cannot round-trip."""
+    for field in _TEXT_FIELDS:
+        entities = deserialize_entities(str(layout.get(_ENTITY_FIELDS[field], "[]")))
+        if any(entity.type != "custom_emoji" or not entity.custom_emoji_id for entity in entities):
+            return True
+    return False
+
+
 def serialize_rich_layout(layout: dict[str, Any]) -> str:
     """Serialize only known, validated fields before storing them in BotSetting."""
     cleaned = _default_flags()
