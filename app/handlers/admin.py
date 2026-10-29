@@ -9,11 +9,12 @@ from aiogram import F, Router
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError, TelegramRetryAfter
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message
+from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InputRichMessage, Message
 
 from app.config import Settings
 from app.db.models import AdminButton, Broadcast, WelcomeButton
 from app.db.repository import (
+    DEFAULT_WELCOME,
     create_broadcast,
     find_recipients,
     get_admin_button,
@@ -47,6 +48,7 @@ from app.keyboards.customization import (
     language_selection_buttons_markup,
     loading_message_markup,
     reset_all_markup,
+    rich_welcome_layout_markup,
     style_markup,
     welcome_buttons_markup,
     welcome_message_markup,
@@ -72,10 +74,20 @@ from app.states.workflows import (
     LoadingMessageStates,
     WelcomeButtonStates,
     WelcomeMessageStates,
+    RichWelcomeStates,
 )
 from app.utils.formatting import user_label
 from app.utils.pagination import page_count
 from app.utils.security import is_admin, require_admin_callback
+from app.services.rich_welcome import (
+    RICH_LAYOUT_FIELDS,
+    RICH_LAYOUT_SETTING,
+    parse_rich_layout,
+    render_rich_layout,
+    rich_layout_from_text,
+    rich_layout_plain_text,
+    serialize_rich_layout,
+)
 
 logger = logging.getLogger(__name__)
 router = Router(name="admin")
@@ -114,6 +126,45 @@ async def edit_or_answer(callback: CallbackQuery, text: str, markup=None) -> Non
         await callback.message.edit_text(text, reply_markup=markup)
     except TelegramBadRequest:
         await callback.message.answer(text, reply_markup=markup)
+
+
+async def get_rich_layout_for_editor(session):
+    raw_layout = await get_setting(session, RICH_LAYOUT_SETTING, "")
+    layout = parse_rich_layout(raw_layout)
+    if layout is not None:
+        return layout, True
+
+    current_text = await get_setting(session, "welcome_text", DEFAULT_WELCOME)
+    if not current_text.strip():
+        current_text = DEFAULT_WELCOME
+    entities = deserialize_entities(await get_setting(session, "welcome_entities", "[]"))
+    return rich_layout_from_text(
+        current_text,
+        entities,
+        is_default_welcome=current_text == DEFAULT_WELCOME,
+    ), False
+
+
+def rich_layout_menu_text(layout: dict, customized: bool) -> str:
+    def sample(field: str, limit: int = 90) -> str:
+        value = str(layout.get(field, "")).replace("\\n", " ↵ ").strip()
+        if not value:
+            return "(empty)"
+        return value if len(value) <= limit else value[:limit - 1] + "…"
+
+    status = "Customized and saved" if customized else "Not customized yet — existing Welcome Message is unchanged"
+    return (
+        "🧩 Rich Message Layout\n\n"
+        f"Status: {status}\n"
+        f"Rich Messages: {'ON' if layout.get('enabled', True) else 'OFF'}\n\n"
+        f"Heading: {sample('heading')}\n"
+        f"Body: {sample('body')}\n"
+        f"Example label: {sample('example_heading')}\n"
+        f"Example: {sample('example')}\n"
+        f"Footer: {sample('footer')}\n\n"
+        "Edit a section, change the display switches, or preview before testing with /start. "
+        "The saved original Welcome Message and buttons are kept separately."
+    )
 
 
 async def show_stats(callback: CallbackQuery, session) -> None:
@@ -189,6 +240,84 @@ async def customization_callbacks(callback: CallbackQuery, settings: Settings, s
     elif action == "welcome_reset":
         await reset_welcome_message(session)
         await edit_or_answer(callback, "Welcome message reset to default.", welcome_message_markup())
+    elif action == "rich_layout":
+        await state.clear()
+        layout, customized = await get_rich_layout_for_editor(session)
+        await edit_or_answer(
+            callback,
+            rich_layout_menu_text(layout, customized),
+            rich_welcome_layout_markup(layout, customized),
+        )
+    elif action == "rich_edit":
+        field = parts[2] if len(parts) > 2 else ""
+        if field not in RICH_LAYOUT_FIELDS:
+            await edit_or_answer(callback, "Unsupported Rich Message section.", welcome_message_markup())
+            return
+        await state.clear()
+        await state.update_data(rich_field=field)
+        await state.set_state(RichWelcomeStates.waiting_field)
+        layout, _ = await get_rich_layout_for_editor(session)
+        current_value = str(layout.get(field, ""))
+        await edit_or_answer(
+            callback,
+            f"Send the new {RICH_LAYOUT_FIELDS[field]} text.\n\n"
+            f"Current value:\n{current_value or '(empty)'}\n\n"
+            "Telegram custom/animated emoji are supported. Send /skip to clear this section.",
+            cancel_markup(callback_data="ctm:rich_layout"),
+        )
+    elif action == "rich_toggle":
+        flag = parts[2] if len(parts) > 2 else ""
+        if flag not in {"enabled", "show_heading", "show_divider", "show_example", "monospace", "show_footer"}:
+            await edit_or_answer(callback, "Unsupported Rich Message setting.", welcome_message_markup())
+            return
+        layout, _ = await get_rich_layout_for_editor(session)
+        layout[flag] = not layout.get(flag, True)
+        await set_setting(session, RICH_LAYOUT_SETTING, serialize_rich_layout(layout))
+        layout, customized = await get_rich_layout_for_editor(session)
+        await edit_or_answer(
+            callback,
+            rich_layout_menu_text(layout, customized),
+            rich_welcome_layout_markup(layout, customized),
+        )
+    elif action == "rich_reset":
+        await set_setting(session, RICH_LAYOUT_SETTING, "")
+        layout, customized = await get_rich_layout_for_editor(session)
+        await edit_or_answer(
+            callback,
+            "Rich Message layout reset. Your original Welcome Message and buttons were not changed.\n\n"
+            + rich_layout_menu_text(layout, customized),
+            rich_welcome_layout_markup(layout, customized),
+        )
+    elif action == "rich_preview":
+        layout, _ = await get_rich_layout_for_editor(session)
+        rich_html = render_rich_layout(layout)
+        send_rich_message = getattr(bot, "send_rich_message", None)
+        if rich_html and layout.get("enabled", True) and callable(send_rich_message):
+            try:
+                me = await bot.get_me()
+                buttons = await list_welcome_buttons(session)
+                await send_rich_message(
+                    chat_id=callback.message.chat.id,
+                    rich_message=InputRichMessage(html=rich_html),
+                    reply_markup=welcome_markup(buttons, me.username, "en"),
+                )
+            except (TelegramBadRequest, TypeError, ValueError) as error:
+                logger.warning("Could not preview Rich Welcome layout: %s", error)
+                await callback.message.answer(
+                    rich_layout_plain_text(layout) or "(The selected Rich Message sections are empty.)",
+                    reply_markup=welcome_markup(await list_welcome_buttons(session), (await bot.get_me()).username, "en"),
+                )
+        else:
+            await callback.message.answer(
+                rich_layout_plain_text(layout) or "(The selected Rich Message sections are empty.)",
+                reply_markup=welcome_markup(await list_welcome_buttons(session), (await bot.get_me()).username, "en"),
+            )
+        layout, customized = await get_rich_layout_for_editor(session)
+        await edit_or_answer(
+            callback,
+            rich_layout_menu_text(layout, customized),
+            rich_welcome_layout_markup(layout, customized),
+        )
     elif action == "language_buttons":
         await state.clear()
         icon_ids = await get_language_button_icons(session)
@@ -411,6 +540,50 @@ async def save_admin_button_style(callback, session, state, style: str) -> None:
     await edit_or_answer(callback, "Admin button saved. Preview:", admin_buttons_markup(await list_admin_buttons(session)))
 
 
+@router.message(RichWelcomeStates.waiting_field)
+async def save_rich_welcome_field(message: Message, state: FSMContext, session) -> None:
+    data = await state.get_data()
+    field = data.get("rich_field")
+    if field not in RICH_LAYOUT_FIELDS:
+        await state.clear()
+        await message.answer("Rich Message editing session expired. Reopen /ctm and try again.")
+        return
+    if not message.text:
+        await message.answer(
+            "Please send text, or send /skip to clear this section.",
+            reply_markup=cancel_markup(callback_data="ctm:rich_layout"),
+        )
+        return
+
+    entities = message.entities or []
+    unsupported = [
+        entity.type
+        for entity in entities
+        if entity.type != "custom_emoji" or not entity.custom_emoji_id
+    ]
+    if unsupported:
+        await message.answer(
+            "This Rich Message editor supports plain text and Telegram custom/animated emoji. "
+            "Please resend without bold/italic/link formatting, or send /skip.",
+            reply_markup=cancel_markup(callback_data="ctm:rich_layout"),
+        )
+        return
+
+    value = "" if message.text.strip() == "/skip" else message.text
+    saved_entities = [] if not value else entities
+    layout, _ = await get_rich_layout_for_editor(session)
+    layout[field] = value
+    layout[f"{field}_entities"] = serialize_entities(saved_entities)
+    await set_setting(session, RICH_LAYOUT_SETTING, serialize_rich_layout(layout))
+    await state.clear()
+    layout, customized = await get_rich_layout_for_editor(session)
+    await message.answer(
+        f"{RICH_LAYOUT_FIELDS[field]} saved. Preview the layout before testing /start.",
+        reply_markup=rich_welcome_layout_markup(layout, customized),
+    )
+    await message.answer(rich_layout_menu_text(layout, customized))
+
+
 @router.message(WelcomeMessageStates.waiting_text)
 async def save_welcome_message(message: Message, state: FSMContext, session) -> None:
     if not message.text:
@@ -418,6 +591,9 @@ async def save_welcome_message(message: Message, state: FSMContext, session) -> 
         return
     await set_setting(session, "welcome_text", message.text)
     await set_setting(session, "welcome_entities", serialize_entities(message.entities))
+    # A new welcome message invalidates the previous structured slots; they
+    # are re-created from this text the next time Rich Message Layout is opened.
+    await set_setting(session, RICH_LAYOUT_SETTING, "")
     await state.clear()
     await message.answer("Welcome message saved. Preview:", reply_markup=welcome_markup(await list_welcome_buttons(session), (await message.bot.get_me()).username))
     preview_text = without_default_welcome_decoration(
