@@ -507,7 +507,7 @@ async def save_request_language_sent_message(message: Message, state: FSMContext
 
 
 @router.message(LoadingMessageStates.waiting_text)
-async def save_loading_message(message: Message, state: FSMContext, session) -> None
+async def save_loading_message(message: Message, state: FSMContext, session) -> None:
     if not message.text or not message.text.strip():
         await message.answer(
             "Please send a text message, or press Cancel.",
