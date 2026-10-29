@@ -85,6 +85,7 @@ from app.services.rich_welcome import (
     parse_rich_layout,
     render_rich_layout,
     rich_layout_from_text,
+    rich_layout_has_unsupported_entities,
     rich_layout_plain_text,
     serialize_rich_layout,
 )
@@ -147,7 +148,7 @@ async def get_rich_layout_for_editor(session):
 
 def rich_layout_menu_text(layout: dict, customized: bool) -> str:
     def sample(field: str, limit: int = 90) -> str:
-        value = str(layout.get(field, "")).replace("\\n", " ↵ ").strip()
+        value = str(layout.get(field, "")).replace("\n", " ↵ ").strip()
         if not value:
             return "(empty)"
         return value if len(value) <= limit else value[:limit - 1] + "…"
@@ -271,6 +272,13 @@ async def customization_callbacks(callback: CallbackQuery, settings: Settings, s
             await edit_or_answer(callback, "Unsupported Rich Message setting.", welcome_message_markup())
             return
         layout, _ = await get_rich_layout_for_editor(session)
+        if rich_layout_has_unsupported_entities(layout):
+            await edit_or_answer(
+                callback,
+                "To preserve the current message formatting, edit the Body section first without bold/italic/link formatting. No changes were saved.",
+                rich_welcome_layout_markup(layout, False),
+            )
+            return
         layout[flag] = not layout.get(flag, True)
         await set_setting(session, RICH_LAYOUT_SETTING, serialize_rich_layout(layout))
         layout, customized = await get_rich_layout_for_editor(session)
@@ -574,6 +582,13 @@ async def save_rich_welcome_field(message: Message, state: FSMContext, session) 
     layout, _ = await get_rich_layout_for_editor(session)
     layout[field] = value
     layout[f"{field}_entities"] = serialize_entities(saved_entities)
+    if rich_layout_has_unsupported_entities(layout):
+        await message.answer(
+            "The existing Welcome Message contains formatting that this editor cannot safely preserve. "
+            "Edit the Body section first to replace that formatted content, then retry.",
+            reply_markup=cancel_markup(callback_data="ctm:rich_layout"),
+        )
+        return
     await set_setting(session, RICH_LAYOUT_SETTING, serialize_rich_layout(layout))
     await state.clear()
     layout, customized = await get_rich_layout_for_editor(session)
