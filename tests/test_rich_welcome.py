@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 from aiogram.exceptions import TelegramBadRequest
 
+from app.db.models import WelcomeButton
 from app.db.repository import DEFAULT_WELCOME
 from app.handlers import start as start_handler
 from app.services.i18n import LANGUAGES, localized_default_welcome
@@ -40,7 +41,11 @@ def _welcome_mocks(monkeypatch, welcome_text):
         return default
 
     monkeypatch.setattr(start_handler, "get_setting", fake_get_setting)
-    monkeypatch.setattr(start_handler, "list_welcome_buttons", AsyncMock(return_value=[]))
+    monkeypatch.setattr(
+        start_handler,
+        "list_welcome_buttons",
+        AsyncMock(return_value=[WelcomeButton(label="🔗 Share Bot", button_type="share")]),
+    )
     message = SimpleNamespace(
         chat=SimpleNamespace(id=12345),
         answer=AsyncMock(),
