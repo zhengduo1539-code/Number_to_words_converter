@@ -1,3 +1,5 @@
+from app.db.models import WelcomeButton
+from app.keyboards.buttons import welcome_markup
 from app.keyboards.language import language_markup
 from app.services.i18n import (
     LANGUAGES,
@@ -29,6 +31,20 @@ def test_request_language_button_is_localized():
         if button.callback_data == "request_language"
     ][0]
     assert request_button.text == "🌐 طلب لغة"
+
+
+
+def test_share_button_falls_back_to_english_for_sinhala_and_tamil():
+    share_button = WelcomeButton(label="🔗 Share Bot", button_type="share")
+
+    for language in ("si", "ta"):
+        markup = welcome_markup([share_button], "example_bot", language)
+        button = markup.inline_keyboard[0][0]
+        assert button.text == "🔗 Share Bot"
+        assert button.url == (
+            "https://t.me/share/url?url=https://t.me/example_bot"
+            "&text=Try%20Numbers%20to%20Words%20Converter"
+        )
 
 
 def test_supported_language_outputs():
