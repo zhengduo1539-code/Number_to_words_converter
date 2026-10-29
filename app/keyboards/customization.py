@@ -26,9 +26,12 @@ def language_messages_markup() -> InlineKeyboardMarkup:
         [compatible_button("♻️ Reset Choose Language", callback_data="ctm:language_menu_reset", style="danger")],
         [compatible_button("✏️ Edit Language Changed", callback_data="ctm:language_changed_edit", style="primary")],
         [compatible_button("♻️ Reset Language Changed", callback_data="ctm:language_changed_reset", style="danger")],
+        [compatible_button("✏️ Edit Request Language Prompt", callback_data="ctm:request_language_prompt_edit", style="primary")],
+        [compatible_button("♻️ Reset Request Prompt", callback_data="ctm:request_language_prompt_reset", style="danger")],
+        [compatible_button("✏️ Edit Request Sent Confirmation", callback_data="ctm:request_language_sent_edit", style="primary")],
+        [compatible_button("♻️ Reset Request Sent", callback_data="ctm:request_language_sent_reset", style="danger")],
         [compatible_button("⬅️ Back", callback_data="ctm:home", style="primary")],
     ])
-
 
 def loading_message_markup() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
