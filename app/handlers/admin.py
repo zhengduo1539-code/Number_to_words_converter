@@ -285,7 +285,7 @@ async def customization_callbacks(callback: CallbackQuery, settings: Settings, s
         await state.set_state(LanguageMessageStates.waiting_request_prompt)
         await edit_or_answer(
             callback,
-            "Send the custom Request Language prompt. Telegram custom/animated emojis and formatting are supported; the message remains localized for other bot languages.",
+            "Send the custom Request Language prompt. Telegram custom/animated emojis are supported; the message remains localized for other bot languages.",
             cancel_markup(),
         )
     elif action == "request_language_prompt_reset":
@@ -296,7 +296,7 @@ async def customization_callbacks(callback: CallbackQuery, settings: Settings, s
         await state.set_state(LanguageMessageStates.waiting_request_sent)
         await edit_or_answer(
             callback,
-            "Send the custom request-submitted confirmation. Telegram custom/animated emojis and formatting are supported; the message remains localized for other bot languages.",
+            "Send the custom request-submitted confirmation. Telegram custom/animated emojis are supported; the message remains localized for other bot languages.",
             cancel_markup(),
         )
     elif action == "request_language_sent_reset":
