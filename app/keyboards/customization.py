@@ -13,6 +13,7 @@ def customization_markup() -> InlineKeyboardMarkup:
         [compatible_button("🌐 Language Messages", callback_data="ctm:language_messages", style="primary")],
         [compatible_button("🌐 Language Selection Buttons", callback_data="ctm:language_buttons", style="primary")],
         [compatible_button("⏳ Loading Message", callback_data="ctm:loading_message", style="primary")],
+        [compatible_button("🔔 Inactivity Reminder Messages", callback_data="ctm:reminder", style="primary")],
         [compatible_button("🔘 Welcome Buttons", callback_data="ctm:welcome_buttons", style="primary")],
         [compatible_button("🛠 Admin Panel Buttons", callback_data="ctm:admin_buttons", style="primary")],
         [compatible_button("♻️ Reset All", callback_data="ctm:reset_all", style="danger")],
@@ -38,6 +39,45 @@ def loading_message_markup() -> InlineKeyboardMarkup:
         [compatible_button("✏️ Edit", callback_data="ctm:loading_edit", style="primary"),
          compatible_button("♻️ Reset", callback_data="ctm:loading_reset", style="danger")],
         [compatible_button("⬅️ Back", callback_data="ctm:home", style="primary")],
+    ])
+
+
+def reminder_languages_markup(customized_languages: set[str]) -> InlineKeyboardMarkup:
+    rows = []
+    for index in range(0, len(LANGUAGES), 2):
+        row = []
+        for language in LANGUAGES[index:index + 2]:
+            label = (
+                f"✅ {language.menu_label}"
+                if language.code in customized_languages
+                else language.menu_label
+            )
+            row.append(
+                compatible_button(
+                    label,
+                    callback_data=f"ctm:reminder_language:{language.code}",
+                    style="primary",
+                )
+            )
+        rows.append(row)
+    rows.append([
+        compatible_button("⬅️ Back", callback_data="ctm:home", style="primary")
+    ])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def reminder_language_markup(language_code: str) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            compatible_button("✏️ Edit Message", callback_data=f"ctm:reminder_edit:{language_code}", style="primary"),
+            compatible_button("👁 Preview", callback_data=f"ctm:reminder_preview:{language_code}", style="success"),
+        ],
+        [
+            compatible_button("♻️ Reset to Default", callback_data=f"ctm:reminder_reset:{language_code}", style="danger"),
+        ],
+        [
+            compatible_button("⬅️ Back to Languages", callback_data="ctm:reminder", style="primary"),
+        ],
     ])
 
 

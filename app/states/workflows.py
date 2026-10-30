@@ -24,6 +24,10 @@ class LoadingMessageStates(StatesGroup):
     waiting_text = State()
 
 
+class ReminderMessageStates(StatesGroup):
+    waiting_text = State()
+
+
 class RequestLanguageStates(StatesGroup):
     waiting_text = State()
 

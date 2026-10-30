@@ -8,7 +8,8 @@ from typing import Any
 from aiogram import Bot
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError, TelegramRetryAfter
 
-from app.services.i18n import normalize_language, text
+from app.services.i18n import normalize_language
+from app.services.reminder_messages import get_reminder_message
 
 logger = logging.getLogger(__name__)
 
@@ -32,24 +33,35 @@ async def _mark_unreachable(database: Any, telegram_user_id: int, error: Excepti
     )
 
 
+async def _send_reminder(
+    bot: Bot,
+    telegram_user_id: int,
+    message_text: str,
+    entities: list[Any],
+) -> None:
+    if entities:
+        await bot.send_message(telegram_user_id, message_text, entities=entities)
+    else:
+        await bot.send_message(telegram_user_id, message_text)
+
+
 async def send_due_reminders(bot: Bot, database: Any) -> int:
     """Send at most one reminder for each inactive period.
 
     A new private interaction clears last_reminder_at, allowing one reminder
-    after the next seven-day period. Legacy user documents without the new
-    preference fields keep reminders enabled by default.
+    after the next seven-day period. Admins can customize the copy per locale.
     """
     now = datetime.now(timezone.utc)
     cutoff = now - INACTIVITY_PERIOD
     query = {
         "is_bot": False,
         "is_blocked": {"$ne": True},
-        "reminders_enabled": {"$ne": False},
         "last_seen_at": {"$lte": cutoff},
         "last_reminder_at": None,
     }
     cursor = database.users.find(query).sort("last_seen_at", 1)
     sent = 0
+    localized_messages: dict[str, tuple[str, list[Any]]] = {}
 
     async for user in cursor:
         telegram_user_id = user.get("telegram_user_id")
@@ -58,13 +70,15 @@ async def send_due_reminders(bot: Bot, database: Any) -> int:
             continue
 
         locale = normalize_language(user.get("preferred_language"))
-        message_text = text("inactive_reminder", locale)
+        if locale not in localized_messages:
+            localized_messages[locale] = await get_reminder_message(database, locale)
+        message_text, message_entities = localized_messages[locale]
         try:
-            await bot.send_message(telegram_user_id, message_text)
+            await _send_reminder(bot, telegram_user_id, message_text, message_entities)
         except TelegramRetryAfter as error:
             await asyncio.sleep(max(0.0, float(error.retry_after)))
             try:
-                await bot.send_message(telegram_user_id, message_text)
+                await _send_reminder(bot, telegram_user_id, message_text, message_entities)
             except (TelegramForbiddenError, TelegramBadRequest) as delivery_error:
                 await _mark_unreachable(database, telegram_user_id, delivery_error)
                 continue
