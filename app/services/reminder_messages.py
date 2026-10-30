@@ -34,8 +34,8 @@ async def get_reminder_message(
         str(item.get("key")): str(item.get("value") or "")
         for item in documents
     }
-    custom_text = settings.get(reminder_text_setting_key(language), "").strip()
-    if not custom_text:
+    custom_text = settings.get(reminder_text_setting_key(language), "")
+    if not custom_text.strip():
         return text("inactive_reminder", language), []
 
     entities = deserialize_entities(

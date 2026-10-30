@@ -66,7 +66,7 @@ def reminder_languages_markup(customized_languages: set[str]) -> InlineKeyboardM
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-def reminder_language_markup(language_code: str, customized: bool) -> InlineKeyboardMarkup:
+def reminder_language_markup(language_code: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [
             compatible_button("✏️ Edit Message", callback_data=f"ctm:reminder_edit:{language_code}", style="primary"),

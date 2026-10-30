@@ -3,6 +3,12 @@ from app.keyboards.customization import (
     reminder_language_markup,
     reminder_languages_markup,
 )
+from types import SimpleNamespace
+from unittest.mock import AsyncMock
+
+import pytest
+
+from app.bot.setup import configure_commands
 from app.services.i18n import LANGUAGES
 
 
@@ -36,7 +42,7 @@ def test_reminder_language_menu_exposes_every_supported_locale():
 
 
 def test_selected_language_has_edit_preview_reset_and_back_actions():
-    callbacks = _callbacks(reminder_language_markup("en", True))
+    callbacks = _callbacks(reminder_language_markup("en"))
 
     assert callbacks == {
         "ctm:reminder_edit:en",
@@ -44,3 +50,13 @@ def test_selected_language_has_edit_preview_reset_and_back_actions():
         "ctm:reminder_reset:en",
         "ctm:reminder",
     }
+
+
+@pytest.mark.asyncio
+async def test_user_command_menu_no_longer_registers_reminder():
+    bot = AsyncMock()
+
+    await configure_commands(bot, SimpleNamespace(admin_ids=[]))
+
+    commands = bot.set_my_commands.await_args.args[0]
+    assert [command.command for command in commands] == ["start", "lang"]

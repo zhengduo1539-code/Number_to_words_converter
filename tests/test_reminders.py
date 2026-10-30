@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, call
 
@@ -123,8 +124,6 @@ async def test_custom_reminder_entities_are_loaded_for_preview_and_delivery():
         length=2,
         custom_emoji_id="123456789",
     )
-    import json
-
     database = FakeDatabase([], [
         {"key": reminder_text_setting_key("en"), "value": "🎉 Come back!"},
         {

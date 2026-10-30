@@ -96,7 +96,6 @@ from app.services.rich_welcome import (
 from app.services.reminder_messages import (
     get_customized_reminder_languages,
     get_reminder_message,
-    reminder_entities_setting_key,
     reminder_text_setting_key,
     reset_reminder_message,
     reset_reminder_messages,
@@ -444,7 +443,7 @@ async def customization_callbacks(callback: CallbackQuery, settings: Settings, s
             f"Status: {status}\n\n"
             "This message is sent when a user has been inactive for seven days. "
             "Preview it, edit the text, or reset it to the built-in translation.",
-            reminder_language_markup(language_code, bool(custom_text.strip())),
+            reminder_language_markup(language_code),
         )
     elif action == "reminder_edit":
         language_code = parts[2] if len(parts) > 2 else ""
@@ -483,7 +482,7 @@ async def customization_callbacks(callback: CallbackQuery, settings: Settings, s
         await edit_or_answer(
             callback,
             f"🔔 Inactivity Reminder — {language.label}\n\nStatus: {status}",
-            reminder_language_markup(language_code, bool(custom_text.strip())),
+            reminder_language_markup(language_code),
         )
     elif action == "reminder_reset":
         language_code = parts[2] if len(parts) > 2 else ""
@@ -853,7 +852,7 @@ async def save_reminder_message_text(message: Message, state: FSMContext, sessio
             ),
         )
         return
-    if len(message.text) > 3500:
+    if len(message.text.encode('utf-16-le')) // 2 > 3500:
         await message.answer(
             "The reminder is too long. Please keep it within 3,500 characters.",
             reply_markup=cancel_markup(
