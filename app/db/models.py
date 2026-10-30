@@ -23,7 +23,8 @@ class User:
     start_count: int = 0
     total_conversions: int = 0
     is_blocked: bool = False
-    # Legacy field retained for existing MongoDB documents; the removed /reminder command no longer reads it.\n    reminders_enabled: bool = True
+    # Legacy field retained for existing MongoDB documents; the removed /reminder command no longer reads it.
+    reminders_enabled: bool = True
     last_reminder_at: datetime | None = None
     created_at: datetime = field(default_factory=utc_now)
     updated_at: datetime = field(default_factory=utc_now)

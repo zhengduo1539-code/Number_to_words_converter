@@ -496,7 +496,7 @@ async def customization_callbacks(callback: CallbackQuery, settings: Settings, s
         await edit_or_answer(
             callback,
             f"✅ {language.label} reminder reset to its built-in translation.",
-            reminder_language_markup(language_code, False),
+            reminder_language_markup(language_code),
         )
     elif action == "language_menu_edit":
         await state.set_state(LanguageMessageStates.waiting_menu)
@@ -881,7 +881,7 @@ async def save_reminder_message_text(message: Message, state: FSMContext, sessio
     await state.clear()
     await message.answer(
         f"✅ {language.label} inactivity reminder saved. Preview:",
-        reply_markup=reminder_language_markup(language_code, True),
+        reply_markup=reminder_language_markup(language_code),
     )
     await message.answer(message.text, entities=entities or None)
 
