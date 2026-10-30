@@ -53,10 +53,18 @@ def test_selected_language_has_edit_preview_reset_and_back_actions():
 
 
 @pytest.mark.asyncio
-async def test_user_command_menu_no_longer_registers_reminder():
+async def test_user_and_admin_command_menus_no_longer_register_reminder():
     bot = AsyncMock()
 
-    await configure_commands(bot, SimpleNamespace(admin_ids=[]))
+    await configure_commands(bot, SimpleNamespace(admin_ids=[123456]))
 
-    commands = bot.set_my_commands.await_args.args[0]
-    assert [command.command for command in commands] == ["start", "lang"]
+    assert len(bot.set_my_commands.await_args_list) == 2
+    user_commands = bot.set_my_commands.await_args_list[0].args[0]
+    admin_commands = bot.set_my_commands.await_args_list[1].args[0]
+    assert [command.command for command in user_commands] == ["start", "lang"]
+    assert [command.command for command in admin_commands] == [
+        "start",
+        "lang",
+        "admin",
+        "ctm",
+    ]

@@ -425,6 +425,7 @@ async def customization_callbacks(callback: CallbackQuery, settings: Settings, s
             reminder_languages_markup(customized_languages),
         )
     elif action == "reminder_language":
+        await state.clear()
         language_code = parts[2] if len(parts) > 2 else ""
         language = LANGUAGE_BY_CODE.get(language_code)
         if not language:
@@ -465,6 +466,7 @@ async def customization_callbacks(callback: CallbackQuery, settings: Settings, s
             cancel_markup(callback_data=f"ctm:reminder_language:{language_code}"),
         )
     elif action == "reminder_preview":
+        await state.clear()
         language_code = parts[2] if len(parts) > 2 else ""
         language = LANGUAGE_BY_CODE.get(language_code)
         if not language:
@@ -485,6 +487,7 @@ async def customization_callbacks(callback: CallbackQuery, settings: Settings, s
             reminder_language_markup(language_code),
         )
     elif action == "reminder_reset":
+        await state.clear()
         language_code = parts[2] if len(parts) > 2 else ""
         language = LANGUAGE_BY_CODE.get(language_code)
         if not language:
