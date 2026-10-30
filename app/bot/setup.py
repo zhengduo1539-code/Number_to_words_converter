@@ -32,6 +32,7 @@ def create_dispatcher(session_factory, settings: Settings) -> Dispatcher:
     dispatcher.message.middleware(session_middleware)
     dispatcher.callback_query.middleware(session_middleware)
     dispatcher.message.middleware(RegisterUserMiddleware())
+    dispatcher.callback_query.middleware(RegisterUserMiddleware())
     dispatcher.include_router(start.router)
     dispatcher.include_router(language.router)
     dispatcher.include_router(reminder.router)
