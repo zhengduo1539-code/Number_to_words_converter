@@ -106,6 +106,8 @@ async def upsert_user(session: MongoSession, telegram_user: Any, started: bool =
         user.last_seen_at = now
         user.updated_at = now
         user.is_blocked = False
+        # A new interaction starts a fresh inactivity period.
+        user.last_reminder_at = None
         if started:
             user.start_count += 1
     else:
@@ -138,10 +140,32 @@ async def get_user_language(session: MongoSession, telegram_user_id: int) -> str
     return user.preferred_language if user and user.preferred_language else "en"
 
 
+async def get_user_reminders_enabled(session: MongoSession, telegram_user_id: int) -> bool:
+    document = await session.database.users.find_one({"telegram_user_id": telegram_user_id})
+    return bool(document.get("reminders_enabled", True)) if document else True
+
+
+async def set_user_reminders_enabled(
+    session: MongoSession,
+    telegram_user_id: int,
+    enabled: bool,
+) -> None:
+    now = datetime.now(timezone.utc)
+    await session.database.users.update_one(
+        {"telegram_user_id": telegram_user_id},
+        {"$set": {
+            "reminders_enabled": enabled,
+            "last_seen_at": now,
+            "last_reminder_at": None,
+            "updated_at": now,
+        }},
+    )
+
+
 async def set_user_language(session: MongoSession, telegram_user_id: int, language: str) -> None:
     await session.database.users.update_one(
         {"telegram_user_id": telegram_user_id},
-        {"$set": {"preferred_language": language, "last_seen_at": datetime.now(timezone.utc)}},
+        {"$set": {"preferred_language": language, "last_seen_at": datetime.now(timezone.utc), "last_reminder_at": None}},
     )
 
 
@@ -150,7 +174,7 @@ async def increment_conversion(session: MongoSession, telegram_user_id: int) -> 
         {"telegram_user_id": telegram_user_id},
         {
             "$inc": {"total_conversions": 1},
-            "$set": {"last_seen_at": datetime.now(timezone.utc)},
+            "$set": {"last_seen_at": datetime.now(timezone.utc), "last_reminder_at": None},
         },
     )
 

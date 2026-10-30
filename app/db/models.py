@@ -23,6 +23,8 @@ class User:
     start_count: int = 0
     total_conversions: int = 0
     is_blocked: bool = False
+    reminders_enabled: bool = True
+    last_reminder_at: datetime | None = None
     created_at: datetime = field(default_factory=utc_now)
     updated_at: datetime = field(default_factory=utc_now)
 

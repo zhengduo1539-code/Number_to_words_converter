@@ -11,6 +11,7 @@ from app.bot.setup import configure_commands, create_bot, create_dispatcher
 from app.config import get_settings
 from app.db.database import create_client, create_session_factory, get_database, init_db
 from app.db.repository import initialize_defaults
+from app.services.reminder_scheduler import run_reminder_scheduler
 from app.web.server import create_web_app
 
 settings = get_settings()
@@ -32,6 +33,7 @@ async def lifespan(app: FastAPI):
     async with session_factory() as session:
         await initialize_defaults(session)
     polling_task = None
+    reminder_task = None
     if bot and dispatcher:
         await configure_commands(bot, settings)
         if settings.webhook_url and not settings.polling:
@@ -55,7 +57,13 @@ async def lifespan(app: FastAPI):
             await bot.delete_webhook(drop_pending_updates=False)
             polling_task = asyncio.create_task(dispatcher.start_polling(bot))
             logger.info("Telegram polling started")
+    if bot:
+        reminder_task = asyncio.create_task(run_reminder_scheduler(bot, database))
+        logger.info("Seven-day inactivity reminder scheduler started")
     yield
+    if reminder_task:
+        reminder_task.cancel()
+        await asyncio.gather(reminder_task, return_exceptions=True)
     if polling_task:
         polling_task.cancel()
         await asyncio.gather(polling_task, return_exceptions=True)
