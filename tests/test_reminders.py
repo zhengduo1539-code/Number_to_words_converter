@@ -178,12 +178,11 @@ async def test_scheduler_does_not_select_recent_or_already_reminded_users(monkey
 async def test_unreachable_user_is_marked_blocked_to_avoid_retries():
     from app.services.reminder_scheduler import _mark_unreachable
 
-    users = FakeUsers([
+    database = FakeDatabase([
         {"telegram_user_id": 505, "is_blocked": False},
     ])
-    database = FakeDatabase(users.documents)
 
     await _mark_unreachable(database, 505, RuntimeError("chat not found"))
 
-    assert users.documents[0]["is_blocked"] is True
-    assert len(users.updates) == 1
+    assert database.users.documents[0]["is_blocked"] is True
+    assert len(database.users.updates) == 1
