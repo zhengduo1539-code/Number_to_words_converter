@@ -64,7 +64,6 @@ from app.services.emoji_service import (
     serialize_entities,
 )
 from app.services.i18n import (
-    LANGUAGES,
     LANGUAGE_BY_CODE,
     without_default_language_decoration,
     without_default_welcome_decoration,

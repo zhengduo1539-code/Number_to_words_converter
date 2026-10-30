@@ -161,10 +161,19 @@ async def test_scheduler_sends_localized_or_custom_message_once_and_marks_it_sen
             "preferred_language": "en",
         },
     ]
-    custom = "Admin-customized English reminder."
+    custom = "🎉 Admin-customized English reminder."
+    custom_entity = MessageEntity(
+        type="custom_emoji",
+        offset=0,
+        length=2,
+        custom_emoji_id="987654321",
+    )
     database = FakeDatabase(users, [
         {"key": reminder_text_setting_key("en"), "value": custom},
-        {"key": reminder_entities_setting_key("en"), "value": "[]"},
+        {
+            "key": reminder_entities_setting_key("en"),
+            "value": json.dumps([custom_entity.model_dump(exclude_none=True)]),
+        },
     ])
     bot = AsyncMock()
     monkeypatch.setattr("app.services.reminder_scheduler.asyncio.sleep", AsyncMock())
@@ -174,7 +183,7 @@ async def test_scheduler_sends_localized_or_custom_message_once_and_marks_it_sen
     assert sent == 2
     assert bot.send_message.await_args_list == [
         call(101, text("inactive_reminder", "my")),
-        call(202, custom),
+        call(202, custom, entities=[custom_entity]),
     ]
     assert all(user["last_reminder_at"] is not None for user in users)
     assert "reminders_enabled" not in database.users.query
