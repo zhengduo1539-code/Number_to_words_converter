@@ -214,6 +214,133 @@ TEXTS: dict[str, dict[str, str]] = {
 }
 
 
+# Reminder messages are kept separate from the main UI catalogue so this
+# feature can be added without changing existing translations.
+REMINDER_TEXTS: dict[str, dict[str, str]] = {
+    "en": {
+        "inactive_reminder": "🥺 It's been a while! We miss having you around.\n\nNeed to convert a number into English words? Your Number To Words Converter is always here to help! ✨\n\nWhether it's a small number or a large one, just send it over and get the written form instantly.\n\n💡 Come back anytime and make number conversion effortless!\n\n🔢 Send a number to get started.",
+        "reminder_settings": "🔔 Inactive reminders: {status}\n\nIf you don't use the bot for 7 days, I'll send one friendly reminder. You can change this setting anytime.",
+        "reminder_status_on": "ON",
+        "reminder_status_off": "OFF",
+        "reminder_turn_on": "🔔 Turn reminders on",
+        "reminder_turn_off": "🔕 Turn reminders off",
+        "reminder_private_only": "Please use /reminder in a private chat with the bot.",
+    },
+    "bn": {
+        "inactive_reminder": "🥺 অনেক দিন হলো! আপনাকে এখানে না দেখে আমাদেরও খারাপ লাগছে।\n\nকোনো সংখ্যাকে ইংরেজি শব্দে রূপান্তর করতে হবে? আপনার Number To Words Converter সবসময় সাহায্যের জন্য প্রস্তুত! ✨\n\nছোট বা বড়—যেকোনো সংখ্যা পাঠান, মুহূর্তেই তার কথায় লেখা রূপ পেয়ে যাবেন।\n\n💡 যেকোনো সময় ফিরে আসুন এবং সহজেই সংখ্যা রূপান্তর করুন!\n\n🔢 শুরু করতে একটি সংখ্যা পাঠান।",
+        "reminder_settings": "🔔 নিষ্ক্রিয়তার রিমাইন্ডার: {status}\n\nআপনি টানা ৭ দিন বট ব্যবহার না করলে একটি বন্ধুত্বপূর্ণ রিমাইন্ডার পাঠানো হবে। আপনি যেকোনো সময় এই সেটিং পরিবর্তন করতে পারেন।",
+        "reminder_status_on": "চালু",
+        "reminder_status_off": "বন্ধ",
+        "reminder_turn_on": "🔔 রিমাইন্ডার চালু করুন",
+        "reminder_turn_off": "🔕 রিমাইন্ডার বন্ধ করুন",
+        "reminder_private_only": "অনুগ্রহ করে বটের সঙ্গে ব্যক্তিগত চ্যাটে /reminder ব্যবহার করুন।",
+    },
+    "zh": {
+        "inactive_reminder": "🥺 好久不见！我们很想念您。\n\n需要把数字转换成英文单词吗？您的 Number To Words Converter 随时为您提供帮助！✨\n\n无论数字大小，只需发送数字，即可立即获得英文拼写。\n\n💡 欢迎随时回来，让数字转换变得轻松简单！\n\n🔢 发送一个数字即可开始。",
+        "reminder_settings": "🔔 闲置提醒：{status}\n\n如果您连续 7 天没有使用机器人，我们会发送一条友好的提醒。您可以随时更改此设置。",
+        "reminder_status_on": "开启",
+        "reminder_status_off": "关闭",
+        "reminder_turn_on": "🔔 开启提醒",
+        "reminder_turn_off": "🔕 关闭提醒",
+        "reminder_private_only": "请在与机器人的私聊中使用 /reminder。",
+    },
+    "my": {
+        "inactive_reminder": "🥺 မတွေ့ရတာ ကြာပြီနော်။ သင့်ကို ပြန်တွေ့ရဖို့ မျှော်လင့်နေပါတယ်။\n\nဂဏန်းတစ်ခုကို English စကားလုံးအဖြစ် ပြောင်းချင်ပါသလား။ သင့် Number To Words Converter က အမြဲကူညီဖို့ အသင့်ရှိပါတယ်။ ✨\n\nဂဏန်းသေးသေးလေးဖြစ်စေ၊ ဂဏန်းကြီးကြီးဖြစ်စေ ပို့လိုက်ရုံနဲ့ အင်္ဂလိပ်စာလုံးဖြင့် ရေးသားထားသည့်ပုံစံကို ချက်ချင်းရရှိနိုင်ပါတယ်။\n\n💡 အချိန်မရွေး ပြန်လာပြီး ဂဏန်းပြောင်းလဲခြင်းကို လွယ်ကူစွာ လုပ်ဆောင်လိုက်ပါ။\n\n🔢 စတင်ရန် ဂဏန်းတစ်ခု ပို့လိုက်ပါ။",
+        "reminder_settings": "🔔 အသုံးမပြုသည့်အချိန် Reminder: {status}\n\nBot ကို ၇ ရက်ဆက်တိုက် အသုံးမပြုပါက သတိပေးစာတစ်စောင် ပို့ပေးပါမယ်။ ဒီ setting ကို အချိန်မရွေး ပြောင်းလဲနိုင်ပါတယ်။",
+        "reminder_status_on": "ဖွင့်ထားသည်",
+        "reminder_status_off": "ပိတ်ထားသည်",
+        "reminder_turn_on": "🔔 Reminder ဖွင့်မည်",
+        "reminder_turn_off": "🔕 Reminder ပိတ်မည်",
+        "reminder_private_only": "Bot နှင့် Private Chat ထဲတွင် /reminder ကို အသုံးပြုပေးပါ။",
+    },
+    "am": {
+        "inactive_reminder": "🥺 ቆይተናል! እዚህ እንደገና ብንገናኝ ደስ ይለናል።\n\nቁጥርን ወደ እንግሊዝኛ ቃላት መቀየር ይፈልጋሉ? የእርስዎ Number To Words Converter ሁልጊዜ ሊረዳዎ ዝግጁ ነው! ✨\n\nትንሽም ሆነ ትልቅ ቁጥር ብቻ ይላኩ፤ በቅጽበት በቃላት የተጻፈውን ቅጽ ያገኛሉ።\n\n💡 በማንኛውም ጊዜ ይመለሱና ቁጥሮችን በቀላሉ ይቀይሩ!\n\n🔢 ለመጀመር ቁጥር ይላኩ።",
+        "reminder_settings": "🔔 የእንቅስቃሴ ማስታወሻ፦ {status}\n\nቦቱን ለ7 ቀናት ካልተጠቀሙ አንድ ወዳጃዊ ማስታወሻ እንልካለን። ይህን ቅንብር በማንኛውም ጊዜ መቀየር ይችላሉ።",
+        "reminder_status_on": "በርቷል",
+        "reminder_status_off": "ጠፍቷል",
+        "reminder_turn_on": "🔔 ማስታወሻዎችን አብራ",
+        "reminder_turn_off": "🔕 ማስታወሻዎችን አጥፋ",
+        "reminder_private_only": "እባክዎ /reminder ን ከቦቱ ጋር በግል ውይይት ይጠቀሙ።",
+    },
+    "am_latn": {
+        "inactive_reminder": "🥺 Zare gize gize tebkew new! Yedegnineten madreg enwedalen.\n\nTiqur be-English qalat lemafek yetifelgal? Yene Number To Words Converter be-gizew lay yemiyadergawen megbar yichilal! ✨\n\nTinishim honé tilik tiqur yisaku; be-qitshet be-qalat yemiteqeterewun tikikil yegagnalu.\n\n💡 Betamen gize deji yetebequt; tiqurochen be-qelalu yikebdu!\n\n🔢 Lemijemer tiqur yisaku.",
+        "reminder_settings": "🔔 Ye-inekasiseke masteyawesha: {status}\n\nBotun le-7 qenat kalte-semetu, and wedajawi masteyawesha enilakel. Yihen qenqen be-manchawm gize mekeyer yichilalu.",
+        "reminder_status_on": "Belitwal",
+        "reminder_status_off": "Tefital",
+        "reminder_turn_on": "🔔 Masteyaweshawochin abera",
+        "reminder_turn_off": "🔕 Masteyaweshawochin atfa",
+        "reminder_private_only": "Ibakwo /reminder-n be-private chat ke-bot gar yiteku.",
+    },
+    "si": {
+        "inactive_reminder": "🥺 ඔබව දැකලා කාලයක් ගතවුණා! ඔබ නැවත එනතුරු අපි බලා සිටියා.\n\nඔබට අංකයක් ඉංග්‍රීසි වචනවලට පරිවර්තනය කරගන්න අවශ්‍යද? ඔබේ Number To Words Converter උදව් කිරීමට සැමවිටම සූදානම්! ✨\n\nකුඩා හෝ විශාල ඕනෑම අංකයක් එවන්න. එහි වචන ආකාරය ක්ෂණිකව ලබාගන්න.\n\n💡 ඕනෑම වේලාවක නැවත පැමිණ අංක පරිවර්තනය පහසු කරගන්න!\n\n🔢 ආරම්භ කිරීමට අංකයක් එවන්න.",
+        "reminder_settings": "🔔 අක්‍රියතා මතක් කිරීම: {status}\n\nඔබ දින 7ක් බොට් භාවිතා නොකළහොත් එක් මිත්‍රශීලී මතක් කිරීමක් එවන්නෙමු. මෙම සැකසුම ඕනෑම වේලාවක වෙනස් කළ හැකිය.",
+        "reminder_status_on": "ක්‍රියාත්මකයි",
+        "reminder_status_off": "අක්‍රියයි",
+        "reminder_turn_on": "🔔 මතක් කිරීම් ක්‍රියාත්මක කරන්න",
+        "reminder_turn_off": "🔕 මතක් කිරීම් අක්‍රිය කරන්න",
+        "reminder_private_only": "කරුණාකර බොට් සමඟ පෞද්ගලික කතාබහකදී /reminder භාවිතා කරන්න.",
+    },
+    "ta": {
+        "inactive_reminder": "🥺 நீண்ட நாட்களாக உங்களைப் பார்க்கவில்லை! நீங்கள் மீண்டும் வருவது எங்களுக்கு மகிழ்ச்சி.\n\nஒரு எண்ணை ஆங்கிலச் சொற்களாக மாற்ற வேண்டுமா? உங்கள் Number To Words Converter எப்போதும் உதவத் தயாராக உள்ளது! ✨\n\nசிறிய எண்ணாக இருந்தாலும் பெரிய எண்ணாக இருந்தாலும், அதை அனுப்புங்கள்; உடனே சொற்களாக எழுதப்பட்ட வடிவத்தைப் பெறுங்கள்.\n\n💡 எப்போது வேண்டுமானாலும் திரும்பி வந்து எண்ணை எளிதாக மாற்றுங்கள்!\n\n🔢 தொடங்க ஒரு எண்ணை அனுப்புங்கள்.",
+        "reminder_settings": "🔔 செயலற்ற நினைவூட்டல்கள்: {status}\n\nநீங்கள் 7 நாட்கள் இந்த bot-ஐப் பயன்படுத்தாவிட்டால் ஒரு நட்பான நினைவூட்டலை அனுப்புவோம். இந்த அமைப்பை எப்போது வேண்டுமானாலும் மாற்றலாம்.",
+        "reminder_status_on": "இயக்கம்",
+        "reminder_status_off": "முடக்கம்",
+        "reminder_turn_on": "🔔 நினைவூட்டல்களை இயக்கு",
+        "reminder_turn_off": "🔕 நினைவூட்டல்களை முடக்கு",
+        "reminder_private_only": "Bot உடனான தனிப்பட்ட உரையாடலில் /reminder பயன்படுத்தவும்.",
+    },
+    "om": {
+        "inactive_reminder": "🥺 Yeroo dheeraa si hin argine! Deebitee dhufuun kee nu gammachiisa.\n\nLakkoofsa tokko gara jechoota Afaan Ingiliziitti jijjiiruu barbaaddaa? Number To Words Converter kee yeroo hunda si gargaaruuf qophaaʼaa dha! ✨\n\nLakkoofsi xiqqaa yookaan guddaan, ergi qofa; bifa jechootaan barreeffame battalumatti argatta.\n\n💡 Yeroo barbaadde deebiʼi; jijjiirraan lakkoofsaa salphaa dha!\n\n🔢 Jalqabuuf lakkoofsa ergi.",
+        "reminder_settings": "🔔 Yaadachiisa yeroo hin fayyadamne: {status}\n\nGuyyaa 7f bot kana yoo hin fayyadamne, yaadachiisa michummaa tokko siif ergina. Qindaa'ina kana yeroo barbaadde jijjiiruu dandeessa.",
+        "reminder_status_on": "Banaa",
+        "reminder_status_off": "Cufaa",
+        "reminder_turn_on": "🔔 Yaadachiisa banuu",
+        "reminder_turn_off": "🔕 Yaadachiisa cufuu",
+        "reminder_private_only": "Maaloo /reminder haasawa dhuunfaa bot waliin jiru keessatti fayyadami.",
+    },
+    "es": {
+        "inactive_reminder": "🥺 ¡Hace tiempo que no hablamos! Nos alegra tenerte de vuelta.\n\n¿Necesitas convertir un número a palabras en inglés? ¡Tu Number To Words Converter está siempre listo para ayudarte! ✨\n\nYa sea un número pequeño o grande, solo envíalo y recibirás su forma escrita al instante.\n\n💡 Vuelve cuando quieras y convierte números sin esfuerzo.\n\n🔢 Envía un número para comenzar.",
+        "reminder_settings": "🔔 Recordatorios por inactividad: {status}\n\nSi no usas el bot durante 7 días, te enviaremos un recordatorio amistoso. Puedes cambiar esta opción cuando quieras.",
+        "reminder_status_on": "ACTIVADOS",
+        "reminder_status_off": "DESACTIVADOS",
+        "reminder_turn_on": "🔔 Activar recordatorios",
+        "reminder_turn_off": "🔕 Desactivar recordatorios",
+        "reminder_private_only": "Usa /reminder en un chat privado con el bot.",
+    },
+    "fr": {
+        "inactive_reminder": "🥺 Cela fait un moment ! Votre présence nous manque.\n\nBesoin d’écrire un nombre en toutes lettres en anglais ? Votre Number To Words Converter est toujours là pour vous aider ! ✨\n\nPetit ou grand, envoyez simplement votre nombre et obtenez immédiatement sa forme écrite.\n\n💡 Revenez quand vous voulez et convertissez vos nombres en toute simplicité !\n\n🔢 Envoyez un nombre pour commencer.",
+        "reminder_settings": "🔔 Rappels d’inactivité : {status}\n\nSi vous n’utilisez pas le bot pendant 7 jours, nous vous enverrons un rappel amical. Vous pouvez modifier ce réglage à tout moment.",
+        "reminder_status_on": "ACTIVÉS",
+        "reminder_status_off": "DÉSACTIVÉS",
+        "reminder_turn_on": "🔔 Activer les rappels",
+        "reminder_turn_off": "🔕 Désactiver les rappels",
+        "reminder_private_only": "Utilisez /reminder dans une conversation privée avec le bot.",
+    },
+    "ru": {
+        "inactive_reminder": "🥺 Давно не виделись! Нам не хватает вашего присутствия.\n\nНужно записать число английскими словами? Ваш Number To Words Converter всегда готов помочь! ✨\n\nОтправьте любое число — маленькое или большое — и мгновенно получите его запись словами.\n\n💡 Возвращайтесь в любое время и переводите числа без лишних усилий!\n\n🔢 Отправьте число, чтобы начать.",
+        "reminder_settings": "🔔 Напоминания о неактивности: {status}\n\nЕсли вы не будете пользоваться ботом 7 дней, мы отправим одно дружеское напоминание. Вы можете изменить эту настройку в любое время.",
+        "reminder_status_on": "ВКЛЮЧЕНЫ",
+        "reminder_status_off": "ВЫКЛЮЧЕНЫ",
+        "reminder_turn_on": "🔔 Включить напоминания",
+        "reminder_turn_off": "🔕 Выключить напоминания",
+        "reminder_private_only": "Используйте /reminder в личном чате с ботом.",
+    },
+    "ar": {
+        "inactive_reminder": "🥺 مضى وقت طويل! نفتقد وجودك معنا.\n\nهل تحتاج إلى كتابة رقم بالكلمات الإنجليزية؟ إن Number To Words Converter جاهز دائمًا لمساعدتك! ✨\n\nسواء كان الرقم صغيرًا أم كبيرًا، أرسله فقط واحصل فورًا على كتابته بالكلمات.\n\n💡 عُد في أي وقت واجعل تحويل الأرقام أمرًا سهلًا!\n\n🔢 أرسل رقمًا للبدء.",
+        "reminder_settings": "🔔 تذكيرات عدم النشاط: {status}\n\nإذا لم تستخدم البوت لمدة 7 أيام، فسنرسل إليك تذكيرًا وديًا واحدًا. يمكنك تغيير هذا الإعداد في أي وقت.",
+        "reminder_status_on": "مفعّلة",
+        "reminder_status_off": "متوقفة",
+        "reminder_turn_on": "🔔 تفعيل التذكيرات",
+        "reminder_turn_off": "🔕 إيقاف التذكيرات",
+        "reminder_private_only": "يرجى استخدام /reminder في محادثة خاصة مع البوت.",
+    },
+}
+
+for _locale, _messages in REMINDER_TEXTS.items():
+    TEXTS[_locale].update(_messages)
+
+
+
 def normalize_language(code: str | None) -> str:
     if not code:
         return "en"
