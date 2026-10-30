@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from aiogram import Bot
-from aiogram.exceptions import TelegramForbiddenError, TelegramRetryAfter
+from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError, TelegramRetryAfter
 
 from app.services.i18n import normalize_language, text
 
@@ -14,6 +14,22 @@ logger = logging.getLogger(__name__)
 
 INACTIVITY_PERIOD = timedelta(days=7)
 REMINDER_SCAN_INTERVAL_SECONDS = 60 * 60
+
+
+async def _mark_unreachable(database: Any, telegram_user_id: int, error: Exception) -> None:
+    """Stop retrying recipients Telegram says cannot receive private messages."""
+    await database.users.update_one(
+        {"telegram_user_id": telegram_user_id},
+        {"$set": {
+            "is_blocked": True,
+            "updated_at": datetime.now(timezone.utc),
+        }},
+    )
+    logger.info(
+        "Skipped future inactivity reminders for unreachable Telegram user %s: %s",
+        telegram_user_id,
+        error,
+    )
 
 
 async def send_due_reminders(bot: Bot, database: Any) -> int:
@@ -49,11 +65,8 @@ async def send_due_reminders(bot: Bot, database: Any) -> int:
             await asyncio.sleep(max(0.0, float(error.retry_after)))
             try:
                 await bot.send_message(telegram_user_id, message_text)
-            except TelegramForbiddenError:
-                await database.users.update_one(
-                    {"telegram_user_id": telegram_user_id},
-                    {"$set": {"is_blocked": True, "updated_at": datetime.now(timezone.utc)}},
-                )
+            except (TelegramForbiddenError, TelegramBadRequest) as delivery_error:
+                await _mark_unreachable(database, telegram_user_id, delivery_error)
                 continue
             except Exception:
                 logger.exception(
@@ -61,11 +74,8 @@ async def send_due_reminders(bot: Bot, database: Any) -> int:
                     telegram_user_id,
                 )
                 continue
-        except TelegramForbiddenError:
-            await database.users.update_one(
-                {"telegram_user_id": telegram_user_id},
-                {"$set": {"is_blocked": True, "updated_at": datetime.now(timezone.utc)}},
-            )
+        except (TelegramForbiddenError, TelegramBadRequest) as delivery_error:
+            await _mark_unreachable(database, telegram_user_id, delivery_error)
             continue
         except Exception:
             logger.exception(
