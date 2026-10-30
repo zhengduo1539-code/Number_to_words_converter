@@ -49,6 +49,8 @@ from app.keyboards.customization import (
     loading_message_markup,
     reset_all_markup,
     rich_welcome_layout_markup,
+    reminder_language_markup,
+    reminder_languages_markup,
     style_markup,
     welcome_buttons_markup,
     welcome_message_markup,
@@ -62,6 +64,7 @@ from app.services.emoji_service import (
     serialize_entities,
 )
 from app.services.i18n import (
+    LANGUAGES,
     LANGUAGE_BY_CODE,
     without_default_language_decoration,
     without_default_welcome_decoration,
@@ -75,6 +78,7 @@ from app.states.workflows import (
     WelcomeButtonStates,
     WelcomeMessageStates,
     RichWelcomeStates,
+    ReminderMessageStates,
 )
 from app.utils.formatting import user_label
 from app.utils.pagination import page_count
@@ -88,6 +92,15 @@ from app.services.rich_welcome import (
     rich_layout_has_unsupported_entities,
     rich_layout_plain_text,
     serialize_rich_layout,
+)
+from app.services.reminder_messages import (
+    get_customized_reminder_languages,
+    get_reminder_message,
+    reminder_entities_setting_key,
+    reminder_text_setting_key,
+    reset_reminder_message,
+    reset_reminder_messages,
+    save_reminder_message,
 )
 
 logger = logging.getLogger(__name__)
@@ -401,6 +414,91 @@ async def customization_callbacks(callback: CallbackQuery, settings: Settings, s
     elif action == "loading_reset":
         await reset_loading_message(session)
         await edit_or_answer(callback, "Loading message reset to default.", loading_message_markup())
+    elif action == "reminder":
+        await state.clear()
+        customized_languages = await get_customized_reminder_languages(session.database)
+        await edit_or_answer(
+            callback,
+            "🔔 Inactivity Reminder Messages\n\n"
+            "Choose a language to edit its seven-day inactivity reminder. "
+            "Each language has its own saved message; languages without a custom message use their built-in translation. "
+            "✅ indicates a customized message.",
+            reminder_languages_markup(customized_languages),
+        )
+    elif action == "reminder_language":
+        language_code = parts[2] if len(parts) > 2 else ""
+        language = LANGUAGE_BY_CODE.get(language_code)
+        if not language:
+            customized_languages = await get_customized_reminder_languages(session.database)
+            await edit_or_answer(
+                callback,
+                "Unsupported reminder language.",
+                reminder_languages_markup(customized_languages),
+            )
+            return
+        custom_text = await get_setting(session, reminder_text_setting_key(language_code), "")
+        status = "Customized" if custom_text.strip() else "Using localized default"
+        await edit_or_answer(
+            callback,
+            f"🔔 Inactivity Reminder — {language.label}\n\n"
+            f"Status: {status}\n\n"
+            "This message is sent when a user has been inactive for seven days. "
+            "Preview it, edit the text, or reset it to the built-in translation.",
+            reminder_language_markup(language_code, bool(custom_text.strip())),
+        )
+    elif action == "reminder_edit":
+        language_code = parts[2] if len(parts) > 2 else ""
+        language = LANGUAGE_BY_CODE.get(language_code)
+        if not language:
+            await edit_or_answer(callback, "Unsupported reminder language.", reminder_languages_markup(
+                await get_customized_reminder_languages(session.database)
+            ))
+            return
+        await state.clear()
+        await state.update_data(reminder_language=language_code)
+        await state.set_state(ReminderMessageStates.waiting_text)
+        await edit_or_answer(
+            callback,
+            f"Send the new inactivity reminder for {language.label}.\n\n"
+            "You can use normal text, Unicode emoji, and Telegram custom/animated emoji. "
+            "Only plain text and custom emoji are accepted so the message stays safe to deliver. "
+            "Maximum length: 3,500 characters.",
+            cancel_markup(callback_data=f"ctm:reminder_language:{language_code}"),
+        )
+    elif action == "reminder_preview":
+        language_code = parts[2] if len(parts) > 2 else ""
+        language = LANGUAGE_BY_CODE.get(language_code)
+        if not language:
+            await edit_or_answer(callback, "Unsupported reminder language.", reminder_languages_markup(
+                await get_customized_reminder_languages(session.database)
+            ))
+            return
+        preview_text, preview_entities = await get_reminder_message(session.database, language_code)
+        await callback.message.answer(
+            preview_text,
+            entities=preview_entities or None,
+        )
+        custom_text = await get_setting(session, reminder_text_setting_key(language_code), "")
+        status = "Customized" if custom_text.strip() else "Using localized default"
+        await edit_or_answer(
+            callback,
+            f"🔔 Inactivity Reminder — {language.label}\n\nStatus: {status}",
+            reminder_language_markup(language_code, bool(custom_text.strip())),
+        )
+    elif action == "reminder_reset":
+        language_code = parts[2] if len(parts) > 2 else ""
+        language = LANGUAGE_BY_CODE.get(language_code)
+        if not language:
+            await edit_or_answer(callback, "Unsupported reminder language.", reminder_languages_markup(
+                await get_customized_reminder_languages(session.database)
+            ))
+            return
+        await reset_reminder_message(session, language_code)
+        await edit_or_answer(
+            callback,
+            f"✅ {language.label} reminder reset to its built-in translation.",
+            reminder_language_markup(language_code, False),
+        )
     elif action == "language_menu_edit":
         await state.set_state(LanguageMessageStates.waiting_menu)
         await edit_or_answer(
@@ -508,6 +606,7 @@ async def customization_callbacks(callback: CallbackQuery, settings: Settings, s
     elif action == "reset_confirm":
         await reset_welcome_message(session)
         await reset_language_messages(session)
+        await reset_reminder_messages(session)
         await set_language_button_icons(session, {})
         await reset_loading_message(session)
         await reset_welcome_buttons(session)
@@ -735,6 +834,57 @@ async def save_loading_message(message: Message, state: FSMContext, session) -> 
             preview_text,
         )
     await message.answer(preview_text, entities=preview_entities or None)
+
+
+@router.message(ReminderMessageStates.waiting_text)
+async def save_reminder_message_text(message: Message, state: FSMContext, session) -> None:
+    data = await state.get_data()
+    language_code = data.get("reminder_language")
+    language = LANGUAGE_BY_CODE.get(language_code)
+    if not language:
+        await state.clear()
+        await message.answer("Reminder editing session expired. Reopen /ctm and try again.")
+        return
+    if not message.text or not message.text.strip():
+        await message.answer(
+            "Please send a non-empty text message, or press Cancel.",
+            reply_markup=cancel_markup(
+                callback_data=f"ctm:reminder_language:{language_code}"
+            ),
+        )
+        return
+    if len(message.text) > 3500:
+        await message.answer(
+            "The reminder is too long. Please keep it within 3,500 characters.",
+            reply_markup=cancel_markup(
+                callback_data=f"ctm:reminder_language:{language_code}"
+            ),
+        )
+        return
+
+    entities = message.entities or []
+    unsupported = [
+        entity.type
+        for entity in entities
+        if entity.type != "custom_emoji" or not entity.custom_emoji_id
+    ]
+    if unsupported:
+        await message.answer(
+            "This editor supports plain text and Telegram custom/animated emoji only. "
+            "Please resend without bold, italic, links, or other formatting.",
+            reply_markup=cancel_markup(
+                callback_data=f"ctm:reminder_language:{language_code}"
+            ),
+        )
+        return
+
+    await save_reminder_message(session, language_code, message.text, entities)
+    await state.clear()
+    await message.answer(
+        f"✅ {language.label} inactivity reminder saved. Preview:",
+        reply_markup=reminder_language_markup(language_code, True),
+    )
+    await message.answer(message.text, entities=entities or None)
 
 
 @router.message(LanguageButtonStates.waiting_icon)

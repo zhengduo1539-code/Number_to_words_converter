@@ -7,7 +7,7 @@ from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import BotCommand, BotCommandScopeChat, BotCommandScopeDefault
 from app.config import Settings
-from app.handlers import admin, converter, language, reminder, start
+from app.handlers import admin, converter, language, start
 from app.handlers.common import RegisterUserMiddleware
 
 logger = logging.getLogger(__name__)
@@ -35,7 +35,6 @@ def create_dispatcher(session_factory, settings: Settings) -> Dispatcher:
     dispatcher.callback_query.middleware(RegisterUserMiddleware())
     dispatcher.include_router(start.router)
     dispatcher.include_router(language.router)
-    dispatcher.include_router(reminder.router)
     dispatcher.include_router(admin.router)
     dispatcher.include_router(converter.router)
     return dispatcher
@@ -46,7 +45,6 @@ async def configure_commands(bot: Bot, settings: Settings) -> None:
         [
             BotCommand(command="start", description="Start the converter"),
             BotCommand(command="lang", description="Change language"),
-            BotCommand(command="reminder", description="Manage inactive reminders"),
         ],
         scope=BotCommandScopeDefault(),
     )
@@ -56,7 +54,6 @@ async def configure_commands(bot: Bot, settings: Settings) -> None:
                 [
                     BotCommand(command="start", description="Start the converter"),
                     BotCommand(command="lang", description="Change language"),
-                    BotCommand(command="reminder", description="Manage inactive reminders"),
                     BotCommand(command="admin", description="Open admin panel"),
                     BotCommand(command="ctm", description="Customize the bot"),
                 ],
